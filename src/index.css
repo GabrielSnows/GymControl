@@ -435,3 +435,488 @@ select {
     transition-duration: 1ms !important;
   }
 }
+
+/* =========================================================
+   Screen
+   ========================================================= */
+
+.gc-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+
+  animation: page-enter var(--gc-transition-normal) ease-out both;
+}
+
+.gc-screen__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding-top: 10px;
+}
+
+.gc-screen__heading {
+  min-width: 0;
+}
+
+.gc-screen__eyebrow {
+  margin: 0 0 8px;
+
+  color: var(--gc-brand);
+
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.gc-screen__title {
+  margin: 0;
+
+  color: var(--gc-text-primary);
+
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  font-weight: 760;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.gc-screen__description {
+  max-width: 290px;
+  margin: 12px 0 0;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.gc-screen__action {
+  flex: 0 0 auto;
+}
+
+.gc-screen__content {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* =========================================================
+   Button
+   ========================================================= */
+
+.gc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-height: 54px;
+  padding: 0 22px;
+
+  border: 1px solid transparent;
+  border-radius: 19px;
+
+  cursor: pointer;
+
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+
+  transition:
+    background-color var(--gc-transition-fast) ease,
+    border-color var(--gc-transition-fast) ease,
+    color var(--gc-transition-fast) ease,
+    opacity var(--gc-transition-fast) ease,
+    transform var(--gc-transition-fast) ease;
+}
+
+.gc-button:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.gc-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.gc-button--full-width {
+  width: 100%;
+}
+
+.gc-button--compact {
+  min-height: 44px;
+  padding-inline: 17px;
+  border-radius: 16px;
+}
+
+.gc-button--primary {
+  color: #ffffff;
+  background: var(--gc-brand);
+  box-shadow:
+    0 10px 24px rgba(229, 57, 53, 0.2),
+    inset 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.gc-button--primary:hover:not(:disabled) {
+  background: var(--gc-brand-hover);
+}
+
+.gc-button--primary:active:not(:disabled) {
+  background: var(--gc-brand-pressed);
+}
+
+.gc-button--secondary {
+  color: var(--gc-text-primary);
+  background: var(--gc-surface);
+  border-color: var(--gc-border);
+  box-shadow: var(--gc-shadow-card);
+}
+
+.gc-button--ghost {
+  color: var(--gc-brand);
+  background: var(--gc-brand-soft);
+}
+
+.gc-button--danger {
+  color: #ffffff;
+  background: var(--gc-brand);
+}
+
+.gc-button__icon {
+  display: grid;
+  place-items: center;
+}
+
+.gc-button__spinner {
+  width: 18px;
+  height: 18px;
+
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+
+  animation: gc-spin 700ms linear infinite;
+}
+
+/* =========================================================
+   Icon button
+   ========================================================= */
+
+.gc-icon-button {
+  display: grid;
+  place-items: center;
+
+  width: 48px;
+  height: 48px;
+  padding: 0;
+
+  border: 1px solid var(--gc-border);
+  border-radius: 17px;
+
+  color: var(--gc-text-primary);
+  background: var(--gc-navigation-background);
+  box-shadow: var(--gc-shadow-card);
+
+  cursor: pointer;
+
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+
+  transition:
+    color var(--gc-transition-fast) ease,
+    transform var(--gc-transition-fast) ease;
+}
+
+.gc-icon-button:active {
+  color: var(--gc-brand);
+  transform: scale(0.92);
+}
+
+/* =========================================================
+   Input
+   ========================================================= */
+
+.gc-input {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.gc-input__label {
+  padding-left: 4px;
+
+  color: var(--gc-text-primary);
+
+  font-size: 0.82rem;
+  font-weight: 680;
+  line-height: 1.2;
+}
+
+.gc-input__control {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-height: 56px;
+  padding: 0 17px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: 19px;
+
+  background: var(--gc-surface);
+
+  transition:
+    border-color var(--gc-transition-fast) ease,
+    box-shadow var(--gc-transition-fast) ease,
+    transform var(--gc-transition-fast) ease;
+}
+
+.gc-input__control:focus-within {
+  border-color: var(--gc-brand);
+  box-shadow: 0 0 0 4px var(--gc-brand-soft);
+}
+
+.gc-input__icon {
+  flex: 0 0 auto;
+  color: var(--gc-text-tertiary);
+}
+
+.gc-input__field {
+  flex: 1;
+
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+
+  border: 0;
+  outline: 0;
+
+  color: var(--gc-text-primary);
+  background: transparent;
+
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.gc-input__field::placeholder {
+  color: var(--gc-text-tertiary);
+}
+
+.gc-input__trailing {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.gc-input-action {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+  padding: 0;
+
+  border-radius: 13px;
+
+  color: var(--gc-text-secondary);
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.gc-input-action:active {
+  background: var(--gc-surface-secondary);
+}
+
+.gc-input__message {
+  margin: 0;
+  padding-left: 4px;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.gc-input__message--error {
+  color: var(--gc-brand);
+}
+
+.gc-input--error .gc-input__control {
+  border-color: var(--gc-brand);
+}
+
+.gc-input--disabled {
+  opacity: 0.52;
+}
+
+/* =========================================================
+   Card
+   ========================================================= */
+
+.gc-card {
+  padding: 22px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-large);
+
+  color: var(--gc-text-primary);
+  background: var(--gc-surface);
+  box-shadow: var(--gc-shadow-card);
+}
+
+.gc-card--subtle {
+  background: var(--gc-surface-secondary);
+  box-shadow: none;
+}
+
+.gc-card--glass {
+  background: var(--gc-navigation-background);
+
+  -webkit-backdrop-filter: blur(20px) saturate(175%);
+  backdrop-filter: blur(20px) saturate(175%);
+}
+
+.gc-card--interactive {
+  cursor: pointer;
+
+  transition:
+    border-color var(--gc-transition-fast) ease,
+    transform var(--gc-transition-fast) ease;
+}
+
+.gc-card--interactive:active {
+  border-color: rgba(229, 57, 53, 0.24);
+  transform: scale(0.985);
+}
+
+/* =========================================================
+   Design system preview
+   ========================================================= */
+
+.design-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.design-section__header {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.design-section__title {
+  margin: 0;
+
+  color: var(--gc-text-primary);
+
+  font-size: 1.18rem;
+  font-weight: 740;
+  letter-spacing: -0.025em;
+}
+
+.design-section__description {
+  margin: 0;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.design-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.design-workout-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.design-workout-card__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+
+  width: 58px;
+  height: 58px;
+
+  border-radius: 19px;
+
+  color: var(--gc-brand);
+  background: var(--gc-brand-soft);
+}
+
+.design-workout-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.design-workout-card__eyebrow {
+  display: block;
+  margin-bottom: 5px;
+
+  color: var(--gc-brand);
+
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.design-workout-card__title {
+  margin: 0;
+
+  color: var(--gc-text-primary);
+
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.design-workout-card__description {
+  margin: 4px 0 0;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.8rem;
+}
+
+.design-workout-card__arrow {
+  flex: 0 0 auto;
+  color: var(--gc-text-tertiary);
+}
+
+.design-card-label {
+  margin: 0 0 7px;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.design-card-value {
+  color: var(--gc-text-primary);
+
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
+
+/* =========================================================
+   Animations
+   ========================================================= */
+
+@keyframes gc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
