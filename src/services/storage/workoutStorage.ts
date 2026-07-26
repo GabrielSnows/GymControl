@@ -20,10 +20,12 @@ interface GymControlDatabase extends DBSchema {
 }
 
 const DATABASE_NAME = 'gymcontrol'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 
 const WORKOUT_STORE_NAME = 'workouts'
 const WORKOUT_DEFINITIONS_STORE_NAME = 'workoutDefinitions'
+
+const WORKOUT_CODES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 const defaultWorkoutDefinitions: WorkoutDefinition[] = [
   {
@@ -76,6 +78,29 @@ const databasePromise = openDB<GymControlDatabase>(
   },
 )
 
+function generateWorkoutId() {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return `workout-${crypto.randomUUID()}`
+  }
+
+  return `workout-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 10)}`
+}
+
+function getCodeForIndex(index: number) {
+  const code = WORKOUT_CODES[index]
+
+  if (!code) {
+    throw new Error('O limite máximo de 26 treinos foi atingido.')
+  }
+
+  return code
+}
+
 async function ensureDefaultWorkoutDefinitions() {
   const database = await databasePromise
   const storedDefinitions = await database.getAll(
@@ -91,12 +116,37 @@ async function ensureDefaultWorkoutDefinitions() {
     'readwrite',
   )
 
-  await Promise.all([
-    ...defaultWorkoutDefinitions.map((definition) =>
-      transaction.store.put(definition),
-    ),
-    transaction.done,
-  ])
+  for (const definition of defaultWorkoutDefinitions) {
+    await transaction.store.put(definition)
+  }
+
+  await transaction.done
+}
+
+async function normalizeWorkoutDefinitions() {
+  const database = await databasePromise
+  const definitions = await database.getAll(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+  )
+
+  const sortedDefinitions = definitions.sort(
+    (first, second) => first.order - second.order,
+  )
+
+  const transaction = database.transaction(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+    'readwrite',
+  )
+
+  for (const [index, definition] of sortedDefinitions.entries()) {
+    await transaction.store.put({
+      ...definition,
+      code: getCodeForIndex(index),
+      order: index + 1,
+    })
+  }
+
+  await transaction.done
 }
 
 export async function getWorkoutDefinitions(): Promise<
@@ -125,6 +175,34 @@ export async function getWorkoutDefinition(
   )
 }
 
+export async function createWorkoutDefinition(
+  name: string,
+  description: string,
+): Promise<WorkoutDefinition> {
+  const definitions = await getWorkoutDefinitions()
+
+  if (definitions.length >= WORKOUT_CODES.length) {
+    throw new Error('O limite máximo de 26 treinos foi atingido.')
+  }
+
+  const newWorkout: WorkoutDefinition = {
+    id: generateWorkoutId(),
+    code: getCodeForIndex(definitions.length),
+    name: name.trim(),
+    description: description.trim(),
+    order: definitions.length + 1,
+  }
+
+  const database = await databasePromise
+
+  await database.put(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+    newWorkout,
+  )
+
+  return newWorkout
+}
+
 export async function saveWorkoutDefinition(
   definition: WorkoutDefinition,
 ): Promise<void> {
@@ -134,6 +212,28 @@ export async function saveWorkoutDefinition(
     WORKOUT_DEFINITIONS_STORE_NAME,
     definition,
   )
+}
+
+export async function deleteWorkout(
+  workoutId: string,
+): Promise<void> {
+  const database = await databasePromise
+
+  const transaction = database.transaction(
+    [WORKOUT_DEFINITIONS_STORE_NAME, WORKOUT_STORE_NAME],
+    'readwrite',
+  )
+
+  await transaction.objectStore(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+  ).delete(workoutId)
+
+  await transaction.objectStore(
+    WORKOUT_STORE_NAME,
+  ).delete(workoutId)
+
+  await transaction.done
+  await normalizeWorkoutDefinitions()
 }
 
 export async function getStoredWorkoutExercises(

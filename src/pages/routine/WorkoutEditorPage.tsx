@@ -1,7 +1,7 @@
 import {
   ArrowLeft,
   Dumbbell,
-  MoreHorizontal,
+  Pencil,
   Plus,
   Trash2,
 } from 'lucide-react'
@@ -17,9 +17,12 @@ import { ExerciseSearchSheet } from '../../components/exercise/ExerciseSearchShe
 import { Screen } from '../../components/layout/Screen'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { WorkoutFormSheet } from '../../components/workout/WorkoutFormSheet'
 import {
+  deleteWorkout,
   getStoredWorkoutExercises,
   getWorkoutDefinition,
+  saveWorkoutDefinition,
   saveWorkoutExercises,
 } from '../../services/storage/workoutStorage'
 import type {
@@ -28,7 +31,7 @@ import type {
 } from '../../types/exercise'
 import type { WorkoutDefinition } from '../../types/workout'
 
-type BuilderStep = 'closed' | 'search' | 'details'
+type EditorStep = 'closed' | 'search' | 'details'
 
 function generateWorkoutExerciseId() {
   if (
@@ -43,12 +46,12 @@ function generateWorkoutExerciseId() {
     .slice(2, 10)}`
 }
 
-export function WorkoutBuilderPage() {
+export function WorkoutEditorPage() {
   const navigate = useNavigate()
   const { workoutId } = useParams()
 
-  const [builderStep, setBuilderStep] =
-    useState<BuilderStep>('closed')
+  const [editorStep, setEditorStep] =
+    useState<EditorStep>('closed')
 
   const [selectedExercise, setSelectedExercise] =
     useState<Exercise | null>(null)
@@ -63,6 +66,7 @@ export function WorkoutBuilderPage() {
   const [isLoadingWorkout, setIsLoadingWorkout] = useState(true)
   const [storageError, setStorageError] = useState(false)
   const [workoutNotFound, setWorkoutNotFound] = useState(false)
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -159,22 +163,22 @@ export function WorkoutBuilderPage() {
 
   function openSearch() {
     setSelectedExercise(null)
-    setBuilderStep('search')
+    setEditorStep('search')
   }
 
   function openExerciseDetails(exercise: Exercise) {
     setSelectedExercise(exercise)
-    setBuilderStep('details')
+    setEditorStep('details')
   }
 
   function returnToSearch() {
     setSelectedExercise(null)
-    setBuilderStep('search')
+    setEditorStep('search')
   }
 
-  function closeBuilder() {
+  function closeExerciseFlow() {
     setSelectedExercise(null)
-    setBuilderStep('closed')
+    setEditorStep('closed')
   }
 
   function addExercise(exercise: Exercise) {
@@ -197,7 +201,7 @@ export function WorkoutBuilderPage() {
       ])
     }
 
-    closeBuilder()
+    closeExerciseFlow()
   }
 
   function removeExercise(workoutExerciseId: string) {
@@ -226,6 +230,37 @@ export function WorkoutBuilderPage() {
     )
   }
 
+  async function updateWorkout(values: {
+    name: string
+    description: string
+  }) {
+    if (!workoutDefinition) {
+      return
+    }
+
+    const updatedWorkout: WorkoutDefinition = {
+      ...workoutDefinition,
+      name: values.name,
+      description: values.description,
+    }
+
+    await saveWorkoutDefinition(updatedWorkout)
+
+    setWorkoutDefinition(updatedWorkout)
+    setIsEditSheetOpen(false)
+  }
+
+  async function removeWorkout() {
+    if (!workoutDefinition) {
+      return
+    }
+
+    await deleteWorkout(workoutDefinition.id)
+
+    setIsEditSheetOpen(false)
+    navigate('/rotina', { replace: true })
+  }
+
   if (workoutNotFound) {
     return <Navigate to="/rotina" replace />
   }
@@ -240,11 +275,11 @@ export function WorkoutBuilderPage() {
         }
         title={workoutDefinition?.name ?? 'Treino'}
         description={
-          workoutDefinition?.description ??
-          'Carregando informações do treino.'
+          workoutDefinition?.description ||
+          'Adicione e configure os exercícios deste treino.'
         }
         action={
-          <div className="workout-builder-actions">
+          <div className="workout-editor-actions">
             <button
               type="button"
               className="gc-icon-button"
@@ -257,9 +292,11 @@ export function WorkoutBuilderPage() {
             <button
               type="button"
               className="gc-icon-button"
-              aria-label="Mais opções do treino"
+              aria-label="Editar treino"
+              disabled={!workoutDefinition}
+              onClick={() => setIsEditSheetOpen(true)}
             >
-              <MoreHorizontal size={21} strokeWidth={2} />
+              <Pencil size={19} strokeWidth={2} />
             </button>
           </div>
         }
@@ -318,8 +355,8 @@ export function WorkoutBuilderPage() {
             <h2>Este treino ainda está vazio</h2>
 
             <p>
-              Pesquise os exercícios e monte este treino da maneira
-              que preferir.
+              Adicione o primeiro exercício para começar a montar
+              este treino.
             </p>
 
             <Button
@@ -328,7 +365,7 @@ export function WorkoutBuilderPage() {
               }
               onClick={openSearch}
             >
-              Adicionar exercício
+              Adicionar primeiro exercício
             </Button>
           </section>
         ) : (
@@ -437,21 +474,29 @@ export function WorkoutBuilderPage() {
         )}
       </Screen>
 
-      {builderStep === 'search' && (
+      {editorStep === 'search' && (
         <ExerciseSearchSheet
-          onClose={closeBuilder}
+          onClose={closeExerciseFlow}
           onSelect={openExerciseDetails}
         />
       )}
 
-      {builderStep === 'details' &&
-        selectedExercise && (
-          <ExerciseDetailsSheet
-            exercise={selectedExercise}
-            onBack={returnToSearch}
-            onAdd={addExercise}
-          />
-        )}
+      {editorStep === 'details' && selectedExercise && (
+        <ExerciseDetailsSheet
+          exercise={selectedExercise}
+          onBack={returnToSearch}
+          onAdd={addExercise}
+        />
+      )}
+
+      {isEditSheetOpen && workoutDefinition && (
+        <WorkoutFormSheet
+          workout={workoutDefinition}
+          onClose={() => setIsEditSheetOpen(false)}
+          onSave={updateWorkout}
+          onDelete={removeWorkout}
+        />
+      )}
     </>
   )
 }

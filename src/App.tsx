@@ -10,7 +10,7 @@ import { DesignSystemPage } from './pages/DesignSystemPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { RoutinePage } from './pages/routine/RoutinePage'
-import { WorkoutBuilderPage } from './pages/routine/WorkoutBuilderPage'
+import { WorkoutEditorPage } from './pages/routine/WorkoutEditorPage'
 
 const navigationItems: NavigationItem[] = [
   {
@@ -40,7 +40,7 @@ function MainApplication() {
 
         <Route
           path="rotina/:workoutId"
-          element={<WorkoutBuilderPage />}
+          element={<WorkoutEditorPage />}
         />
 
         <Route path="ajustes" element={<DesignSystemPage />} />
