@@ -421,32 +421,17 @@
 }
 
 .workout-session-card__media {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 170px;
+  min-height: 190px;
   margin-top: 18px;
 
+  border: 0;
   border-radius: 22px;
 
-  color: var(--gc-brand);
-  background:
-    radial-gradient(
-      circle,
-      var(--gc-brand-soft),
-      transparent 65%
-    ),
-    var(--gc-surface-secondary);
+  box-shadow: none;
 }
 
-.workout-session-card__media span {
-  margin-top: 12px;
-
-  color: var(--gc-text-tertiary);
-
-  font-size: 0.7rem;
+.workout-session-card__media img {
+  height: 190px;
 }
 
 .workout-session-card__details {

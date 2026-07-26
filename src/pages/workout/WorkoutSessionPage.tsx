@@ -2,7 +2,6 @@ import {
   ArrowLeft,
   Check,
   ExternalLink,
-  Dumbbell,
 } from 'lucide-react'
 import {
   useEffect,
@@ -15,6 +14,7 @@ import {
   useParams,
 } from 'react-router-dom'
 
+import { ExerciseGif } from '../../components/exercise/ExerciseGif'
 import { Button } from '../../components/ui/Button'
 import {
   completeWorkout,
@@ -281,11 +281,10 @@ export function WorkoutSessionPage() {
                     </button>
                   </header>
 
-                  <div className="workout-session-card__media">
-                    <Dumbbell size={42} strokeWidth={1.55} />
-
-                    <span>GIF do exercício</span>
-                  </div>
+                  <ExerciseGif
+                    exercise={workoutExercise.exercise}
+                    className="workout-session-card__media"
+                  />
 
                   <div className="workout-session-card__details">
                     <div>

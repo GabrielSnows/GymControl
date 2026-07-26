@@ -5,6 +5,7 @@ export type Exercise = {
   equipment: string
   description: string
   instructions: string[]
+  gifUrl?: string
   muscleWikiUrl?: string
 }
 

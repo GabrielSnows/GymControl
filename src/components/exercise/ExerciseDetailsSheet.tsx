@@ -1,12 +1,12 @@
 import {
   ArrowLeft,
   Check,
-  Dumbbell,
   ExternalLink,
 } from 'lucide-react'
 
 import type { Exercise } from '../../types/exercise'
 import { Button } from '../ui/Button'
+import { ExerciseGif } from './ExerciseGif'
 
 type ExerciseDetailsSheetProps = {
   exercise: Exercise
@@ -43,21 +43,17 @@ export function ExerciseDetailsSheet({
         </header>
 
         <div className="exercise-details__scroll">
-          <div className="exercise-media-placeholder">
-            <div
-              className="exercise-media-placeholder__animation"
-              aria-hidden="true"
-            >
-              <Dumbbell size={52} strokeWidth={1.55} />
-            </div>
-
-            <span>Área reservada para o GIF</span>
-          </div>
+          <ExerciseGif
+            exercise={exercise}
+            className="exercise-details__media"
+          />
 
           <header className="exercise-details__heading">
             <p>{exercise.muscle}</p>
 
-            <h1 id="exercise-details-title">{exercise.name}</h1>
+            <h1 id="exercise-details-title">
+              {exercise.name}
+            </h1>
 
             <span>{exercise.equipment}</span>
           </header>
@@ -72,33 +68,53 @@ export function ExerciseDetailsSheet({
             <h2>Como executar</h2>
 
             <ol className="exercise-instructions">
-              {exercise.instructions.map((instruction) => (
-                <li key={instruction}>
-                  <span className="exercise-instructions__check">
-                    <Check size={15} strokeWidth={2.5} />
-                  </span>
+              {exercise.instructions.map(
+                (instruction) => (
+                  <li key={instruction}>
+                    <span className="exercise-instructions__check">
+                      <Check
+                        size={15}
+                        strokeWidth={2.5}
+                      />
+                    </span>
 
-                  <p>{instruction}</p>
-                </li>
-              ))}
+                    <p>{instruction}</p>
+                  </li>
+                ),
+              )}
             </ol>
           </section>
 
-          <div className="exercise-details__musclewiki">
-            <ExternalLink size={19} strokeWidth={2} />
+          {exercise.muscleWikiUrl && (
+            <a
+              className="exercise-details__musclewiki"
+              href={exercise.muscleWikiUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink
+                size={19}
+                strokeWidth={2}
+              />
 
-            <div>
-              <strong>Guia completo no MuscleWiki</strong>
+              <div>
+                <strong>
+                  Ver execução no MuscleWiki
+                </strong>
 
-              <span>
-                O link individual será conectado junto à biblioteca final.
-              </span>
-            </div>
-          </div>
+                <span>
+                  Abrir o guia completo deste exercício.
+                </span>
+              </div>
+            </a>
+          )}
         </div>
 
         <footer className="exercise-details__footer">
-          <Button fullWidth onClick={() => onAdd(exercise)}>
+          <Button
+            fullWidth
+            onClick={() => onAdd(exercise)}
+          >
             Adicionar ao treino
           </Button>
         </footer>

@@ -12,6 +12,7 @@ import {
   useParams,
 } from 'react-router-dom'
 
+import { cacheExerciseGif } from '../../services/storage/exerciseMediaCache'
 import { ExerciseDetailsSheet } from '../../components/exercise/ExerciseDetailsSheet'
 import { ExerciseSearchSheet } from '../../components/exercise/ExerciseSearchSheet'
 import { Screen } from '../../components/layout/Screen'
@@ -199,6 +200,10 @@ export function WorkoutEditorPage() {
         ...currentExercises,
         newWorkoutExercise,
       ])
+
+      if (exercise.gifUrl) {
+        void cacheExerciseGif(exercise.gifUrl)
+      }
     }
 
     closeExerciseFlow()
