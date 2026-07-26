@@ -2106,3 +2106,107 @@ select {
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
   }
 }
+
+/* =========================================================
+   Workout local storage states
+   ========================================================= */
+
+.workout-storage-warning {
+  padding: 14px 16px;
+
+  border: 1px solid rgba(229, 57, 53, 0.2);
+  border-radius: 17px;
+
+  color: var(--gc-brand);
+  background: var(--gc-brand-soft);
+
+  font-size: 0.76rem;
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+.workout-builder-loading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  min-height: 114px;
+  padding: 22px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-large);
+
+  background: var(--gc-surface);
+  box-shadow: var(--gc-shadow-card);
+
+  overflow: hidden;
+}
+
+.workout-builder-loading__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+
+  width: 52px;
+  height: 52px;
+
+  border-radius: 18px;
+
+  background: var(--gc-brand-soft);
+}
+
+.workout-builder-loading__icon span {
+  width: 19px;
+  height: 19px;
+
+  border: 3px solid var(--gc-brand);
+  border-right-color: transparent;
+  border-radius: 50%;
+
+  animation: gc-spin 700ms linear infinite;
+}
+
+.workout-builder-loading__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workout-builder-loading__content span {
+  display: block;
+
+  height: 12px;
+
+  border-radius: var(--gc-radius-pill);
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--gc-surface-secondary) 20%,
+      var(--gc-border) 50%,
+      var(--gc-surface-secondary) 80%
+    );
+
+  background-size: 220% 100%;
+
+  animation: workout-loading-shimmer 1300ms ease-in-out infinite;
+}
+
+.workout-builder-loading__content span:first-child {
+  width: 72%;
+}
+
+.workout-builder-loading__content span:last-child {
+  width: 46%;
+}
+
+@keyframes workout-loading-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}

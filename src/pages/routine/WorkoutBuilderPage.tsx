@@ -4,19 +4,25 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { ExerciseDetailsSheet } from '../../components/exercise/ExerciseDetailsSheet'
 import { ExerciseSearchSheet } from '../../components/exercise/ExerciseSearchSheet'
 import { Screen } from '../../components/layout/Screen'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import {
+  getStoredWorkoutExercises,
+  saveWorkoutExercises,
+} from '../../services/storage/workoutStorage'
 import type {
   Exercise,
   WorkoutExercise,
 } from '../../types/exercise'
 
 type BuilderStep = 'closed' | 'search' | 'details'
+
+const WORKOUT_ID = 'workout-a'
 
 function generateWorkoutExerciseId() {
   if (
@@ -41,6 +47,70 @@ export function WorkoutBuilderPage() {
   const [workoutExercises, setWorkoutExercises] = useState<
     WorkoutExercise[]
   >([])
+
+  const [isLoadingWorkout, setIsLoadingWorkout] = useState(true)
+  const [storageError, setStorageError] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadWorkout() {
+      try {
+        const storedExercises =
+          await getStoredWorkoutExercises(WORKOUT_ID)
+
+        if (isMounted) {
+          setWorkoutExercises(storedExercises)
+          setStorageError(false)
+        }
+      } catch (error) {
+        console.error(
+          'Não foi possível carregar o treino salvo.',
+          error,
+        )
+
+        if (isMounted) {
+          setStorageError(true)
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingWorkout(false)
+        }
+      }
+    }
+
+    void loadWorkout()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isLoadingWorkout) {
+      return
+    }
+
+    async function persistWorkout() {
+      try {
+        await saveWorkoutExercises(
+          WORKOUT_ID,
+          workoutExercises,
+        )
+
+        setStorageError(false)
+      } catch (error) {
+        console.error(
+          'Não foi possível salvar as alterações do treino.',
+          error,
+        )
+
+        setStorageError(true)
+      }
+    }
+
+    void persistWorkout()
+  }, [isLoadingWorkout, workoutExercises])
 
   function openSearch() {
     setSelectedExercise(null)
@@ -127,24 +197,49 @@ export function WorkoutBuilderPage() {
           </button>
         }
       >
+        {storageError && (
+          <div className="workout-storage-warning" role="status">
+            Não foi possível acessar o armazenamento local. As
+            alterações desta sessão podem não ser preservadas.
+          </div>
+        )}
+
         <Card
           variant="subtle"
           className="workout-builder-summary"
         >
           <div>
             <span>Exercícios</span>
-            <strong>{workoutExercises.length}</strong>
+
+            <strong>
+              {isLoadingWorkout ? '—' : workoutExercises.length}
+            </strong>
           </div>
 
           <div className="workout-builder-summary__divider" />
 
           <div>
             <span>Divisão</span>
+
             <strong>A</strong>
           </div>
         </Card>
 
-        {workoutExercises.length === 0 ? (
+        {isLoadingWorkout ? (
+          <section
+            className="workout-builder-loading"
+            aria-label="Carregando treino"
+          >
+            <div className="workout-builder-loading__icon">
+              <span />
+            </div>
+
+            <div className="workout-builder-loading__content">
+              <span />
+              <span />
+            </div>
+          </section>
+        ) : workoutExercises.length === 0 ? (
           <section className="workout-builder-empty">
             <div
               className="workout-builder-empty__icon"
@@ -211,10 +306,7 @@ export function WorkoutBuilderPage() {
                           removeExercise(workoutExercise.id)
                         }
                       >
-                        <Trash2
-                          size={18}
-                          strokeWidth={2}
-                        />
+                        <Trash2 size={18} strokeWidth={2} />
                       </button>
                     </header>
 
