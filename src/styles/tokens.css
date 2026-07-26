@@ -1,0 +1,85 @@
+:root {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Display',
+    'SF Pro Text',
+    'Segoe UI',
+    sans-serif;
+
+  color: #18181b;
+  background: #e9e9ed;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+
+  --gc-background: #f4f4f5;
+  --gc-surface: #ffffff;
+  --gc-surface-secondary: #ececef;
+
+  --gc-text-primary: #18181b;
+  --gc-text-secondary: #71717a;
+  --gc-text-tertiary: #a1a1aa;
+
+  --gc-border: rgba(24, 24, 27, 0.08);
+
+  --gc-brand: #e53935;
+  --gc-brand-hover: #d93430;
+  --gc-brand-pressed: #c52e2a;
+  --gc-brand-soft: rgba(229, 57, 53, 0.12);
+
+  --gc-success: #34c759;
+
+  --gc-radius-small: 14px;
+  --gc-radius-medium: 20px;
+  --gc-radius-large: 28px;
+  --gc-radius-pill: 999px;
+
+  --gc-shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 12px 32px rgba(0, 0, 0, 0.06);
+
+  --gc-shadow-navigation:
+    0 16px 40px rgba(0, 0, 0, 0.14);
+
+  --gc-navigation-background: rgba(255, 255, 255, 0.72);
+
+  --gc-transition-fast: 160ms;
+  --gc-transition-normal: 240ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #fafafa;
+    background: #08080a;
+
+    --gc-background: #111113;
+    --gc-surface: #1c1c1f;
+    --gc-surface-secondary: #28282c;
+
+    --gc-text-primary: #fafafa;
+    --gc-text-secondary: #a1a1aa;
+    --gc-text-tertiary: #71717a;
+
+    --gc-border: rgba(255, 255, 255, 0.08);
+
+    --gc-brand: #ff453a;
+    --gc-brand-hover: #ff5a51;
+    --gc-brand-pressed: #e63e35;
+    --gc-brand-soft: rgba(255, 69, 58, 0.15);
+
+    --gc-shadow-card:
+      0 1px 2px rgba(0, 0, 0, 0.12),
+      0 14px 40px rgba(0, 0, 0, 0.2);
+
+    --gc-shadow-navigation:
+      0 18px 44px rgba(0, 0, 0, 0.42);
+
+    --gc-navigation-background: rgba(36, 36, 40, 0.72);
+  }
+}

@@ -1,0 +1,116 @@
+/* =========================================================
+   Design system preview
+   ========================================================= */
+
+.design-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.design-section__header {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.design-section__title {
+  margin: 0;
+
+  color: var(--gc-text-primary);
+
+  font-size: 1.18rem;
+  font-weight: 740;
+  letter-spacing: -0.025em;
+}
+
+.design-section__description {
+  margin: 0;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.design-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.design-workout-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.design-workout-card__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+
+  width: 58px;
+  height: 58px;
+
+  border-radius: 19px;
+
+  color: var(--gc-brand);
+  background: var(--gc-brand-soft);
+}
+
+.design-workout-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.design-workout-card__eyebrow {
+  display: block;
+  margin-bottom: 5px;
+
+  color: var(--gc-brand);
+
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.design-workout-card__title {
+  margin: 0;
+
+  color: var(--gc-text-primary);
+
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.design-workout-card__description {
+  margin: 4px 0 0;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.8rem;
+}
+
+.design-workout-card__arrow {
+  flex: 0 0 auto;
+  color: var(--gc-text-tertiary);
+}
+
+.design-card-label {
+  margin: 0 0 7px;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.design-card-value {
+  color: var(--gc-text-primary);
+
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
