@@ -9,6 +9,7 @@ import {
 import { DesignSystemPage } from './pages/DesignSystemPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
+import { RoutinePage } from './pages/routine/RoutinePage'
 import { WorkoutBuilderPage } from './pages/routine/WorkoutBuilderPage'
 
 const navigationItems: NavigationItem[] = [
@@ -34,7 +35,14 @@ function MainApplication() {
     <MobileAppShell>
       <Routes>
         <Route path="treinos" element={<DesignSystemPage />} />
-        <Route path="rotina" element={<WorkoutBuilderPage />} />
+
+        <Route path="rotina" element={<RoutinePage />} />
+
+        <Route
+          path="rotina/:workoutId"
+          element={<WorkoutBuilderPage />}
+        />
+
         <Route path="ajustes" element={<DesignSystemPage />} />
 
         <Route

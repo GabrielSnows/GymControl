@@ -1,10 +1,16 @@
 import {
+  ArrowLeft,
   Dumbbell,
   MoreHorizontal,
   Plus,
   Trash2,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 
 import { ExerciseDetailsSheet } from '../../components/exercise/ExerciseDetailsSheet'
 import { ExerciseSearchSheet } from '../../components/exercise/ExerciseSearchSheet'
@@ -13,16 +19,16 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import {
   getStoredWorkoutExercises,
+  getWorkoutDefinition,
   saveWorkoutExercises,
 } from '../../services/storage/workoutStorage'
 import type {
   Exercise,
   WorkoutExercise,
 } from '../../types/exercise'
+import type { WorkoutDefinition } from '../../types/workout'
 
 type BuilderStep = 'closed' | 'search' | 'details'
-
-const WORKOUT_ID = 'workout-a'
 
 function generateWorkoutExerciseId() {
   if (
@@ -38,11 +44,17 @@ function generateWorkoutExerciseId() {
 }
 
 export function WorkoutBuilderPage() {
+  const navigate = useNavigate()
+  const { workoutId } = useParams()
+
   const [builderStep, setBuilderStep] =
     useState<BuilderStep>('closed')
 
   const [selectedExercise, setSelectedExercise] =
     useState<Exercise | null>(null)
+
+  const [workoutDefinition, setWorkoutDefinition] =
+    useState<WorkoutDefinition | null>(null)
 
   const [workoutExercises, setWorkoutExercises] = useState<
     WorkoutExercise[]
@@ -50,19 +62,41 @@ export function WorkoutBuilderPage() {
 
   const [isLoadingWorkout, setIsLoadingWorkout] = useState(true)
   const [storageError, setStorageError] = useState(false)
+  const [workoutNotFound, setWorkoutNotFound] = useState(false)
 
   useEffect(() => {
     let isMounted = true
 
     async function loadWorkout() {
-      try {
-        const storedExercises =
-          await getStoredWorkoutExercises(WORKOUT_ID)
-
+      if (!workoutId) {
         if (isMounted) {
-          setWorkoutExercises(storedExercises)
-          setStorageError(false)
+          setWorkoutNotFound(true)
+          setIsLoadingWorkout(false)
         }
+
+        return
+      }
+
+      const currentWorkoutId = workoutId
+
+      try {
+        const [definition, storedExercises] = await Promise.all([
+          getWorkoutDefinition(currentWorkoutId),
+          getStoredWorkoutExercises(currentWorkoutId),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        if (!definition) {
+          setWorkoutNotFound(true)
+          return
+        }
+
+        setWorkoutDefinition(definition)
+        setWorkoutExercises(storedExercises)
+        setStorageError(false)
       } catch (error) {
         console.error(
           'Não foi possível carregar o treino salvo.',
@@ -84,17 +118,23 @@ export function WorkoutBuilderPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [workoutId])
 
   useEffect(() => {
-    if (isLoadingWorkout) {
+    if (
+      isLoadingWorkout ||
+      !workoutId ||
+      workoutNotFound
+    ) {
       return
     }
+
+    const currentWorkoutId = workoutId
 
     async function persistWorkout() {
       try {
         await saveWorkoutExercises(
-          WORKOUT_ID,
+          currentWorkoutId,
           workoutExercises,
         )
 
@@ -110,7 +150,12 @@ export function WorkoutBuilderPage() {
     }
 
     void persistWorkout()
-  }, [isLoadingWorkout, workoutExercises])
+  }, [
+    isLoadingWorkout,
+    workoutExercises,
+    workoutId,
+    workoutNotFound,
+  ])
 
   function openSearch() {
     setSelectedExercise(null)
@@ -181,20 +226,42 @@ export function WorkoutBuilderPage() {
     )
   }
 
+  if (workoutNotFound) {
+    return <Navigate to="/rotina" replace />
+  }
+
   return (
     <>
       <Screen
-        eyebrow="Sua rotina"
-        title="Treino A"
-        description="Peito, ombros e tríceps"
+        eyebrow={
+          workoutDefinition
+            ? `Treino ${workoutDefinition.code}`
+            : 'Carregando treino'
+        }
+        title={workoutDefinition?.name ?? 'Treino'}
+        description={
+          workoutDefinition?.description ??
+          'Carregando informações do treino.'
+        }
         action={
-          <button
-            type="button"
-            className="gc-icon-button"
-            aria-label="Mais opções do treino"
-          >
-            <MoreHorizontal size={21} strokeWidth={2} />
-          </button>
+          <div className="workout-builder-actions">
+            <button
+              type="button"
+              className="gc-icon-button"
+              aria-label="Voltar para a rotina"
+              onClick={() => navigate('/rotina')}
+            >
+              <ArrowLeft size={21} strokeWidth={2} />
+            </button>
+
+            <button
+              type="button"
+              className="gc-icon-button"
+              aria-label="Mais opções do treino"
+            >
+              <MoreHorizontal size={21} strokeWidth={2} />
+            </button>
+          </div>
         }
       >
         {storageError && (
@@ -221,7 +288,7 @@ export function WorkoutBuilderPage() {
           <div>
             <span>Divisão</span>
 
-            <strong>A</strong>
+            <strong>{workoutDefinition?.code ?? '—'}</strong>
           </div>
         </Card>
 
@@ -248,10 +315,10 @@ export function WorkoutBuilderPage() {
               <Dumbbell size={31} strokeWidth={1.8} />
             </div>
 
-            <h2>Seu treino ainda está vazio</h2>
+            <h2>Este treino ainda está vazio</h2>
 
             <p>
-              Pesquise os exercícios e monte sua rotina da maneira
+              Pesquise os exercícios e monte este treino da maneira
               que preferir.
             </p>
 

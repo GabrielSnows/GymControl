@@ -1,6 +1,7 @@
 import { openDB, type DBSchema } from 'idb'
 
 import type { WorkoutExercise } from '../../types/exercise'
+import type { WorkoutDefinition } from '../../types/workout'
 
 interface GymControlDatabase extends DBSchema {
   workouts: {
@@ -11,11 +12,42 @@ interface GymControlDatabase extends DBSchema {
       updatedAt: string
     }
   }
+
+  workoutDefinitions: {
+    key: string
+    value: WorkoutDefinition
+  }
 }
 
 const DATABASE_NAME = 'gymcontrol'
-const DATABASE_VERSION = 1
+const DATABASE_VERSION = 2
+
 const WORKOUT_STORE_NAME = 'workouts'
+const WORKOUT_DEFINITIONS_STORE_NAME = 'workoutDefinitions'
+
+const defaultWorkoutDefinitions: WorkoutDefinition[] = [
+  {
+    id: 'workout-a',
+    code: 'A',
+    name: 'Peito, ombros e tríceps',
+    description: 'Treino de membros superiores com foco em empurrar.',
+    order: 1,
+  },
+  {
+    id: 'workout-b',
+    code: 'B',
+    name: 'Costas e bíceps',
+    description: 'Treino de membros superiores com foco em puxar.',
+    order: 2,
+  },
+  {
+    id: 'workout-c',
+    code: 'C',
+    name: 'Pernas',
+    description: 'Treino completo para os membros inferiores.',
+    order: 3,
+  },
+]
 
 const databasePromise = openDB<GymControlDatabase>(
   DATABASE_NAME,
@@ -27,9 +59,82 @@ const databasePromise = openDB<GymControlDatabase>(
           keyPath: 'workoutId',
         })
       }
+
+      if (
+        !database.objectStoreNames.contains(
+          WORKOUT_DEFINITIONS_STORE_NAME,
+        )
+      ) {
+        database.createObjectStore(
+          WORKOUT_DEFINITIONS_STORE_NAME,
+          {
+            keyPath: 'id',
+          },
+        )
+      }
     },
   },
 )
+
+async function ensureDefaultWorkoutDefinitions() {
+  const database = await databasePromise
+  const storedDefinitions = await database.getAll(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+  )
+
+  if (storedDefinitions.length > 0) {
+    return
+  }
+
+  const transaction = database.transaction(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+    'readwrite',
+  )
+
+  await Promise.all([
+    ...defaultWorkoutDefinitions.map((definition) =>
+      transaction.store.put(definition),
+    ),
+    transaction.done,
+  ])
+}
+
+export async function getWorkoutDefinitions(): Promise<
+  WorkoutDefinition[]
+> {
+  await ensureDefaultWorkoutDefinitions()
+
+  const database = await databasePromise
+  const definitions = await database.getAll(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+  )
+
+  return definitions.sort((first, second) => first.order - second.order)
+}
+
+export async function getWorkoutDefinition(
+  workoutId: string,
+): Promise<WorkoutDefinition | undefined> {
+  await ensureDefaultWorkoutDefinitions()
+
+  const database = await databasePromise
+
+  return database.get(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+    workoutId,
+  )
+}
+
+export async function saveWorkoutDefinition(
+  definition: WorkoutDefinition,
+): Promise<void> {
+  const database = await databasePromise
+
+  await database.put(
+    WORKOUT_DEFINITIONS_STORE_NAME,
+    definition,
+  )
+}
 
 export async function getStoredWorkoutExercises(
   workoutId: string,
