@@ -1,7 +1,7 @@
 import {
   ArrowLeft,
   Check,
-  ChevronRight,
+  ExternalLink,
   Dumbbell,
 } from 'lucide-react'
 import {
@@ -56,10 +56,11 @@ export function WorkoutSessionPage() {
       const currentWorkoutId = workoutId
 
       try {
-        const [definition, storedExercises] = await Promise.all([
-          getWorkoutDefinition(currentWorkoutId),
-          getStoredWorkoutExercises(currentWorkoutId),
-        ])
+        const [definition, storedExercises] =
+          await Promise.all([
+            getWorkoutDefinition(currentWorkoutId),
+            getStoredWorkoutExercises(currentWorkoutId),
+          ])
 
         if (!isMounted) {
           return
@@ -171,171 +172,186 @@ export function WorkoutSessionPage() {
   }
 
   return (
-    <div className="workout-session">
-      <header className="workout-session__header">
-        <button
-          type="button"
-          className="gc-icon-button"
-          aria-label="Sair do treino"
-          onClick={() => navigate('/treinos')}
-        >
-          <ArrowLeft size={21} strokeWidth={2} />
-        </button>
+    <>
+      <div className="workout-session">
+        <header className="workout-session__header">
+          <button
+            type="button"
+            className="gc-icon-button"
+            aria-label="Sair do treino"
+            onClick={() => navigate('/treinos')}
+          >
+            <ArrowLeft size={21} strokeWidth={2} />
+          </button>
 
-        <div className="workout-session__heading">
-          <span>
-            {workout ? `Treino ${workout.code}` : 'Carregando'}
-          </span>
+          <div className="workout-session__heading">
+            <span>
+              {workout
+                ? `Treino ${workout.code}`
+                : 'Carregando'}
+            </span>
 
-          <h1>{workout?.name ?? 'Treino'}</h1>
-        </div>
+            <h1>{workout?.name ?? 'Treino'}</h1>
+          </div>
 
-        <div className="workout-session__header-space" />
-      </header>
+          <div className="workout-session__header-space" />
+        </header>
 
-      <section className="workout-session__progress">
-        <div className="workout-session__progress-info">
-          <span>
-            {completedCount} de {exercises.length} concluídos
-          </span>
+        <section className="workout-session__progress">
+          <div className="workout-session__progress-info">
+            <span>
+              {completedCount} de {exercises.length} concluídos
+            </span>
 
-          <strong>{progressPercentage}%</strong>
-        </div>
+            <strong>{progressPercentage}%</strong>
+          </div>
 
-        <div
-          className="workout-session__progress-track"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progressPercentage}
-        >
-          <span
-            style={{
-              width: `${progressPercentage}%`,
-            }}
-          />
-        </div>
-      </section>
-
-      {isLoading ? (
-        <section className="workout-session__loading">
-          <span />
-          <span />
-          <span />
+          <div
+            className="workout-session__progress-track"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercentage}
+          >
+            <span
+              style={{
+                width: `${progressPercentage}%`,
+              }}
+            />
+          </div>
         </section>
-      ) : (
-        <main className="workout-session__list">
-          {exercises.map((workoutExercise, index) => {
-            const isCompleted =
-              completedExerciseIds.includes(
-                workoutExercise.id,
-              )
 
-            return (
-              <article
-                key={workoutExercise.id}
-                className={
-                  isCompleted
-                    ? 'workout-session-card workout-session-card--completed'
-                    : 'workout-session-card'
-                }
-              >
-                <header className="workout-session-card__header">
-                  <div className="workout-session-card__number">
-                    {index + 1}
-                  </div>
+        {isLoading ? (
+          <section className="workout-session__loading">
+            <span />
+            <span />
+            <span />
+          </section>
+        ) : (
+          <main className="workout-session__list">
+            {exercises.map((workoutExercise, index) => {
+              const isCompleted =
+                completedExerciseIds.includes(
+                  workoutExercise.id,
+                )
 
-                  <div className="workout-session-card__title">
-                    <h2>
-                      {workoutExercise.exercise.name}
-                    </h2>
+              return (
+                <article
+                  key={workoutExercise.id}
+                  className={
+                    isCompleted
+                      ? 'workout-session-card workout-session-card--completed'
+                      : 'workout-session-card'
+                  }
+                >
+                  <header className="workout-session-card__header">
+                    <div className="workout-session-card__number">
+                      {index + 1}
+                    </div>
 
-                    <p>
-                      {workoutExercise.exercise.muscle}
-                    </p>
-                  </div>
+                    <div className="workout-session-card__title">
+                      <h2>
+                        {workoutExercise.exercise.name}
+                      </h2>
 
-                  <button
-                    type="button"
-                    className="workout-session-card__check"
-                    aria-label={
+                      <p>
+                        {workoutExercise.exercise.muscle}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="workout-session-card__check"
+                      aria-label={
                         isCompleted
-                        ? `Desmarcar ${workoutExercise.exercise.name}`
-                        : `Concluir ${workoutExercise.exercise.name}`
-                    }
-                    aria-pressed={isCompleted}
-                    onClick={() =>
+                          ? `Desmarcar ${workoutExercise.exercise.name}`
+                          : `Concluir ${workoutExercise.exercise.name}`
+                      }
+                      aria-pressed={isCompleted}
+                      onClick={() =>
                         toggleExercise(workoutExercise.id)
-                    }
+                      }
                     >
-                    <Check
+                      <Check
                         className="workout-session-card__check-icon"
                         size={18}
                         strokeWidth={2.4}
                         aria-hidden="true"
-                    />
-                  </button>
-                </header>
+                      />
+                    </button>
+                  </header>
 
-                <div className="workout-session-card__media">
-                  <Dumbbell size={42} strokeWidth={1.55} />
+                  <div className="workout-session-card__media">
+                    <Dumbbell size={42} strokeWidth={1.55} />
 
-                  <span>GIF do exercício</span>
-                </div>
-
-                <div className="workout-session-card__details">
-                  <div>
-                    <span>Séries</span>
-
-                    <strong>{workoutExercise.series}</strong>
+                    <span>GIF do exercício</span>
                   </div>
 
-                  <label>
-                    <span>Carga</span>
-
+                  <div className="workout-session-card__details">
                     <div>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        value={workoutExercise.weight}
-                        placeholder="0"
-                        onChange={(event) =>
-                          updateWeight(
-                            workoutExercise.id,
-                            event.target.value,
-                          )
-                        }
-                      />
+                      <span>Séries</span>
 
-                      <span>kg</span>
+                      <strong>
+                        {workoutExercise.series}
+                      </strong>
                     </div>
-                  </label>
-                </div>
 
-                <button
-                  type="button"
+                    <label>
+                      <span>Carga</span>
+
+                      <div>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          value={workoutExercise.weight}
+                          placeholder="0"
+                          onChange={(event) =>
+                            updateWeight(
+                              workoutExercise.id,
+                              event.target.value,
+                            )
+                          }
+                        />
+
+                        <span>kg</span>
+                      </div>
+                    </label>
+                  </div>
+
+              {workoutExercise.exercise.muscleWikiUrl && (
+                <a
                   className="workout-session-card__guide"
+                  href={workoutExercise.exercise.muscleWikiUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Ver execução de ${workoutExercise.exercise.name} no MuscleWiki`}
                 >
                   Ver execução
-                  <ChevronRight size={17} strokeWidth={2} />
-                </button>
-              </article>
-            )
-          })}
-        </main>
-      )}
 
-      <footer className="workout-session__footer">
-        <Button
-          fullWidth
-          disabled={!allExercisesCompleted}
-          isLoading={isFinishing}
-          onClick={() => void finishWorkout()}
-        >
-          Concluir treino
-        </Button>
-      </footer>
-    </div>
+                  <ExternalLink
+                    size={17}
+                    strokeWidth={2}
+                  />
+                </a>
+              )}                
+            </article>
+              )
+            })}
+          </main>
+        )}
+
+        <footer className="workout-session__footer">
+          <Button
+            fullWidth
+            disabled={!allExercisesCompleted}
+            isLoading={isFinishing}
+            onClick={() => void finishWorkout()}
+          >
+            Concluir treino
+          </Button>
+        </footer>
+      </div>
+    </>
   )
 }
