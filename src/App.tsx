@@ -11,6 +11,8 @@ import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { RoutinePage } from './pages/routine/RoutinePage'
 import { WorkoutEditorPage } from './pages/routine/WorkoutEditorPage'
+import { WorkoutSessionPage } from './pages/workout/WorkoutSessionPage'
+import { WorkoutsPage } from './pages/workout/WorkoutsPage'
 
 const navigationItems: NavigationItem[] = [
   {
@@ -34,7 +36,12 @@ function MainApplication() {
   return (
     <MobileAppShell>
       <Routes>
-        <Route path="treinos" element={<DesignSystemPage />} />
+        <Route path="treinos" element={<WorkoutsPage />} />
+
+        <Route
+          path="treinos/:workoutId/executar"
+          element={<WorkoutSessionPage />}
+        />
 
         <Route path="rotina" element={<RoutinePage />} />
 
@@ -47,7 +54,7 @@ function MainApplication() {
 
         <Route
           path="*"
-          element={<Navigate to="rotina" replace />}
+          element={<Navigate to="treinos" replace />}
         />
       </Routes>
 
