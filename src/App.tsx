@@ -9,6 +9,7 @@ import {
 import { DesignSystemPage } from './pages/DesignSystemPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
+import { WorkoutBuilderPage } from './pages/routine/WorkoutBuilderPage'
 
 const navigationItems: NavigationItem[] = [
   {
@@ -33,12 +34,12 @@ function MainApplication() {
     <MobileAppShell>
       <Routes>
         <Route path="treinos" element={<DesignSystemPage />} />
-        <Route path="rotina" element={<DesignSystemPage />} />
+        <Route path="rotina" element={<WorkoutBuilderPage />} />
         <Route path="ajustes" element={<DesignSystemPage />} />
 
         <Route
           path="*"
-          element={<Navigate to="treinos" replace />}
+          element={<Navigate to="rotina" replace />}
         />
       </Routes>
 
