@@ -1,7 +1,16 @@
-import { ChevronRight, Search, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ChevronRight,
+  Search,
+  WifiOff,
+  X,
+} from 'lucide-react'
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
-import { exercises } from '../../data/exercises'
+import { searchWorkoutXExercises } from '../../services/api/workoutXService'
 import type { Exercise } from '../../types/exercise'
 
 type ExerciseSearchSheetProps = {
@@ -9,23 +18,24 @@ type ExerciseSearchSheetProps = {
   onSelect: (exercise: Exercise) => void
 }
 
-function normalizeText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-}
+const MINIMUM_SEARCH_LENGTH = 2
+const SEARCH_DELAY = 500
 
 export function ExerciseSearchSheet({
   onClose,
   onSelect,
 }: ExerciseSearchSheetProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+
   const [search, setSearch] = useState('')
+  const [results, setResults] = useState<Exercise[]>([])
+
+  const [isSearching, setIsSearching] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow
+    const previousOverflow =
+      document.body.style.overflow
 
     document.body.style.overflow = 'hidden'
 
@@ -39,21 +49,74 @@ export function ExerciseSearchSheet({
     }
   }, [])
 
-  const filteredExercises = useMemo(() => {
-    const normalizedSearch = normalizeText(search)
+  useEffect(() => {
+    const normalizedSearch = search.trim()
 
-    if (!normalizedSearch) {
-      return []
+    if (
+      normalizedSearch.length <
+      MINIMUM_SEARCH_LENGTH
+    ) {
+      setResults([])
+      setError('')
+      setIsSearching(false)
+
+      return
     }
 
-    return exercises.filter((exercise) => {
-      const searchableContent = normalizeText(
-        `${exercise.name} ${exercise.muscle} ${exercise.equipment}`,
-      )
+    const abortController = new AbortController()
 
-      return searchableContent.includes(normalizedSearch)
-    })
+    const searchTimer = window.setTimeout(async () => {
+      try {
+        setIsSearching(true)
+        setError('')
+
+        const exercises =
+          await searchWorkoutXExercises(
+            normalizedSearch,
+            abortController.signal,
+          )
+
+        if (!abortController.signal.aborted) {
+          setResults(exercises)
+        }
+      } catch (searchError) {
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        console.error(
+          'Não foi possível pesquisar exercícios.',
+          searchError,
+        )
+
+        setResults([])
+
+        setError(
+          searchError instanceof Error
+            ? searchError.message
+            : 'Não foi possível pesquisar exercícios.',
+        )
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsSearching(false)
+        }
+      }
+    }, SEARCH_DELAY)
+
+    return () => {
+      abortController.abort()
+      window.clearTimeout(searchTimer)
+    }
   }, [search])
+
+  function clearSearch() {
+    setSearch('')
+    setResults([])
+    setError('')
+    inputRef.current?.focus()
+  }
+
+  const normalizedSearch = search.trim()
 
   return (
     <div
@@ -65,7 +128,9 @@ export function ExerciseSearchSheet({
       <section className="exercise-sheet exercise-search-sheet">
         <header className="exercise-sheet__header">
           <div>
-            <p className="exercise-sheet__eyebrow">Biblioteca</p>
+            <p className="exercise-sheet__eyebrow">
+              WorkoutX
+            </p>
 
             <h1
               id="exercise-search-title"
@@ -98,10 +163,12 @@ export function ExerciseSearchSheet({
             className="exercise-search__input"
             type="search"
             value={search}
-            placeholder="Pesquise pelo nome ou músculo"
+            placeholder="Ex.: bench press"
             autoComplete="off"
             enterKeyHint="search"
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
           />
 
           {search && (
@@ -109,10 +176,7 @@ export function ExerciseSearchSheet({
               type="button"
               className="exercise-search__clear"
               aria-label="Limpar pesquisa"
-              onClick={() => {
-                setSearch('')
-                inputRef.current?.focus()
-              }}
+              onClick={clearSearch}
             >
               <X size={17} strokeWidth={2.2} />
             </button>
@@ -120,7 +184,7 @@ export function ExerciseSearchSheet({
         </div>
 
         <div className="exercise-search__content">
-          {!search && (
+          {!normalizedSearch && (
             <div className="exercise-search__empty">
               <div
                 className="exercise-search__empty-icon"
@@ -132,58 +196,102 @@ export function ExerciseSearchSheet({
               <h2>Qual exercício deseja adicionar?</h2>
 
               <p>
-                Digite o nome do exercício ou o grupo muscular que deseja
-                treinar.
+                Pesquise pelo nome em inglês. A tradução será
+                adicionada em uma etapa posterior.
               </p>
             </div>
           )}
 
-          {search && filteredExercises.length === 0 && (
+          {normalizedSearch.length === 1 && (
             <div className="exercise-search__empty">
-              <h2>Nenhum exercício encontrado</h2>
+              <h2>Continue digitando</h2>
 
               <p>
-                Tente pesquisar usando outro nome ou o grupo muscular.
+                Digite pelo menos dois caracteres para iniciar a
+                pesquisa.
               </p>
             </div>
           )}
 
-          {filteredExercises.length > 0 && (
-            <div className="exercise-results">
-              <p className="exercise-results__count">
-                {filteredExercises.length}{' '}
-                {filteredExercises.length === 1
-                  ? 'resultado'
-                  : 'resultados'}
-              </p>
+          {isSearching && (
+            <div
+              className="exercise-search-loading"
+              aria-label="Pesquisando exercícios"
+            >
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
 
-              <div className="exercise-results__list">
-                {filteredExercises.map((exercise) => (
-                  <button
-                    key={exercise.id}
-                    type="button"
-                    className="exercise-result"
-                    onClick={() => onSelect(exercise)}
-                  >
-                    <span className="exercise-result__content">
-                      <strong>{exercise.name}</strong>
-
-                      <span>
-                        {exercise.muscle} · {exercise.equipment}
-                      </span>
-                    </span>
-
-                    <ChevronRight
-                      className="exercise-result__arrow"
-                      size={20}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                  </button>
-                ))}
+          {!isSearching && error && (
+            <div className="exercise-search__empty">
+              <div
+                className="exercise-search__empty-icon"
+                aria-hidden="true"
+              >
+                <WifiOff size={26} strokeWidth={1.8} />
               </div>
+
+              <h2>Pesquisa indisponível</h2>
+
+              <p>{error}</p>
             </div>
           )}
+
+          {!isSearching &&
+            !error &&
+            normalizedSearch.length >=
+              MINIMUM_SEARCH_LENGTH &&
+            results.length === 0 && (
+              <div className="exercise-search__empty">
+                <h2>Nenhum exercício encontrado</h2>
+
+                <p>
+                  Tente pesquisar usando outro nome em inglês.
+                </p>
+              </div>
+            )}
+
+          {!isSearching &&
+            !error &&
+            results.length > 0 && (
+              <div className="exercise-results">
+                <p className="exercise-results__count">
+                  {results.length}{' '}
+                  {results.length === 1
+                    ? 'resultado'
+                    : 'resultados'}
+                </p>
+
+                <div className="exercise-results__list">
+                  {results.map((exercise) => (
+                    <button
+                      key={exercise.id}
+                      type="button"
+                      className="exercise-result"
+                      onClick={() => onSelect(exercise)}
+                    >
+                      <span className="exercise-result__content">
+                        <strong>{exercise.name}</strong>
+
+                        <span>
+                          {exercise.muscle} ·{' '}
+                          {exercise.equipment}
+                        </span>
+                      </span>
+
+                      <ChevronRight
+                        className="exercise-result__arrow"
+                        size={20}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
       </section>
     </div>

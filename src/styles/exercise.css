@@ -682,3 +682,66 @@
 .exercise-details__media img {
   height: 310px;
 }
+
+.exercise-search-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 24px 2px;
+}
+
+.exercise-search-loading span {
+  display: block;
+
+  height: 68px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--gc-surface) 20%,
+      var(--gc-surface-secondary) 50%,
+      var(--gc-surface) 80%
+    );
+
+  background-size: 220% 100%;
+
+  animation: workout-loading-shimmer 1300ms ease-in-out infinite;
+}
+
+/* =========================================================
+   WorkoutX search loading
+   ========================================================= */
+
+.exercise-search-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 4px 0;
+}
+
+.exercise-search-loading span {
+  display: block;
+
+  height: 72px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--gc-surface) 20%,
+      var(--gc-surface-secondary) 50%,
+      var(--gc-surface) 80%
+    );
+
+  background-size: 220% 100%;
+
+  animation: workout-loading-shimmer 1300ms
+    ease-in-out infinite;
+}
