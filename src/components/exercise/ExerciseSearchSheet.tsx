@@ -25,18 +25,28 @@ export function ExerciseSearchSheet({
   onClose,
   onSelect,
 }: ExerciseSearchSheetProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const activeRequestRef = useRef<AbortController | null>(null)
+  const inputRef =
+    useRef<HTMLInputElement>(null)
+
+  const activeRequestRef =
+    useRef<AbortController | null>(null)
 
   const [search, setSearch] = useState('')
-  const [submittedSearch, setSubmittedSearch] = useState('')
-  const [results, setResults] = useState<Exercise[]>([])
+  const [submittedSearch, setSubmittedSearch] =
+    useState('')
 
-  const [isSearching, setIsSearching] = useState(false)
+  const [results, setResults] = useState<
+    Exercise[]
+  >([])
+
+  const [isSearching, setIsSearching] =
+    useState(false)
+
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow
+    const previousOverflow =
+      document.body.style.overflow
 
     document.body.style.overflow = 'hidden'
 
@@ -45,7 +55,9 @@ export function ExerciseSearchSheet({
     }, 250)
 
     return () => {
-      document.body.style.overflow = previousOverflow
+      document.body.style.overflow =
+        previousOverflow
+
       window.clearTimeout(focusTimer)
       activeRequestRef.current?.abort()
     }
@@ -58,9 +70,13 @@ export function ExerciseSearchSheet({
 
     const normalizedSearch = search.trim()
 
-    if (normalizedSearch.length < MINIMUM_SEARCH_LENGTH) {
+    if (
+      normalizedSearch.length <
+      MINIMUM_SEARCH_LENGTH
+    ) {
       setSubmittedSearch('')
       setResults([])
+
       setError(
         `Digite pelo menos ${MINIMUM_SEARCH_LENGTH} caracteres.`,
       )
@@ -71,8 +87,11 @@ export function ExerciseSearchSheet({
 
     activeRequestRef.current?.abort()
 
-    const abortController = new AbortController()
-    activeRequestRef.current = abortController
+    const abortController =
+      new AbortController()
+
+    activeRequestRef.current =
+      abortController
 
     try {
       setSubmittedSearch(normalizedSearch)
@@ -80,10 +99,11 @@ export function ExerciseSearchSheet({
       setError('')
       setResults([])
 
-      const exercises = await searchWorkoutXExercises(
-        normalizedSearch,
-        abortController.signal,
-      )
+      const exercises =
+        await searchWorkoutXExercises(
+          normalizedSearch,
+          abortController.signal,
+        )
 
       if (!abortController.signal.aborted) {
         setResults(exercises)
@@ -136,7 +156,7 @@ export function ExerciseSearchSheet({
         <header className="exercise-sheet__header">
           <div>
             <p className="exercise-sheet__eyebrow">
-              WorkoutX
+              Catálogo de exercícios
             </p>
 
             <h1
@@ -153,7 +173,10 @@ export function ExerciseSearchSheet({
             aria-label="Fechar pesquisa"
             onClick={onClose}
           >
-            <X size={21} strokeWidth={2.1} />
+            <X
+              size={21}
+              strokeWidth={2.1}
+            />
           </button>
         </header>
 
@@ -174,7 +197,7 @@ export function ExerciseSearchSheet({
             type="text"
             inputMode="search"
             value={search}
-            placeholder="Ex.: squat ou bench press"
+            placeholder="Ex.: supino, agachamento ou remada"
             autoComplete="off"
             enterKeyHint="search"
             aria-label="Pesquisar exercício"
@@ -194,7 +217,10 @@ export function ExerciseSearchSheet({
               aria-label="Limpar pesquisa"
               onClick={clearSearch}
             >
-              <X size={17} strokeWidth={2.2} />
+              <X
+                size={17}
+                strokeWidth={2.2}
+              />
             </button>
           )}
         </form>
@@ -208,7 +234,10 @@ export function ExerciseSearchSheet({
                   className="exercise-search__empty-icon"
                   aria-hidden="true"
                 >
-                  <Search size={26} strokeWidth={1.8} />
+                  <Search
+                    size={26}
+                    strokeWidth={1.8}
+                  />
                 </div>
 
                 <h2>
@@ -216,8 +245,8 @@ export function ExerciseSearchSheet({
                 </h2>
 
                 <p>
-                  Digite o nome em inglês e pressione Enter para
-                  pesquisar.
+                  Pesquise em português ou inglês e pressione
+                  Enter.
                 </p>
               </div>
             )}
@@ -239,7 +268,10 @@ export function ExerciseSearchSheet({
                 className="exercise-search__empty-icon"
                 aria-hidden="true"
               >
-                <WifiOff size={26} strokeWidth={1.8} />
+                <WifiOff
+                  size={26}
+                  strokeWidth={1.8}
+                />
               </div>
 
               <h2>Pesquisa indisponível</h2>
@@ -253,10 +285,13 @@ export function ExerciseSearchSheet({
             submittedSearch &&
             results.length === 0 && (
               <div className="exercise-search__empty">
-                <h2>Nenhum exercício encontrado</h2>
+                <h2>
+                  Nenhum exercício encontrado
+                </h2>
 
                 <p>
-                  Tente pesquisar usando outro nome em inglês.
+                  Tente pesquisar por um nome mais geral ou
+                  utilizar o nome em inglês.
                 </p>
               </div>
             )}
@@ -279,10 +314,14 @@ export function ExerciseSearchSheet({
                       key={exercise.id}
                       type="button"
                       className="exercise-result"
-                      onClick={() => onSelect(exercise)}
+                      onClick={() =>
+                        onSelect(exercise)
+                      }
                     >
                       <span className="exercise-result__content">
-                        <strong>{exercise.name}</strong>
+                        <strong>
+                          {exercise.displayName}
+                        </strong>
 
                         <span>
                           {exercise.muscle} ·{' '}

@@ -5,7 +5,20 @@ export type Exercise = {
   source: ExerciseSource
   sourceId: string
 
+  /*
+   * name é mantido como nome principal da interface
+   * para compatibilidade com os componentes existentes.
+   */
   name: string
+
+  /*
+   * Nome explicitamente apresentado ao usuário.
+   */
+  displayName: string
+
+  /*
+   * Nome original retornado pela WorkoutX.
+   */
   originalName: string
 
   muscle: string

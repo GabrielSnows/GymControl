@@ -1,14 +1,18 @@
-import {
-  getCachedExerciseSearch,
-  normalizeExerciseSearchQuery,
-  saveExerciseSearch,
-} from '../storage/exerciseSearchStorage'
 import type { Exercise } from '../../types/exercise'
 import type {
   WorkoutXErrorResponse,
   WorkoutXExercise,
   WorkoutXSearchResponse,
 } from '../../types/workoutX'
+import {
+  localizeExercise,
+  translateExerciseSearchQuery,
+} from '../exercise/exerciseTranslationService'
+import {
+  getCachedExerciseSearch,
+  normalizeExerciseSearchQuery,
+  saveExerciseSearch,
+} from '../storage/exerciseSearchStorage'
 
 function normalizeValue(
   value: string | undefined,
@@ -51,19 +55,25 @@ function mapWorkoutXExercise(
   workoutXExercise: WorkoutXExercise,
 ): Exercise {
   const sourceId = workoutXExercise.id
+  const originalName = workoutXExercise.name.trim()
 
-  return {
+  const exercise: Exercise = {
     id: `workoutx-${sourceId}`,
     source: 'workoutx',
     sourceId,
 
-    name: workoutXExercise.name,
-    originalName: workoutXExercise.name,
+    name: originalName,
+    displayName: originalName,
+    originalName,
 
-    muscle: normalizeValue(workoutXExercise.target),
+    muscle: normalizeValue(
+      workoutXExercise.target,
+    ),
+
     bodyPart: normalizeValue(
       workoutXExercise.bodyPart,
     ),
+
     equipment: normalizeValue(
       workoutXExercise.equipment,
     ),
@@ -104,6 +114,8 @@ function mapWorkoutXExercise(
     recommendedReps:
       workoutXExercise.recommendedReps,
   }
+
+  return localizeExercise(exercise)
 }
 
 async function requestWorkoutXExercises(
@@ -152,29 +164,47 @@ export async function searchWorkoutXExercises(
   query: string,
   signal?: AbortSignal,
 ): Promise<Exercise[]> {
-  const normalizedQuery =
+  /*
+   * Esta chave representa exatamente o que o usuário digitou.
+   * Assim, uma pesquisa em português fica armazenada localmente.
+   */
+  const userSearchKey =
     normalizeExerciseSearchQuery(query)
 
-  if (normalizedQuery.length < 2) {
+  if (userSearchKey.length < 2) {
     return []
   }
 
   const cachedExercises =
-    await getCachedExerciseSearch(normalizedQuery)
+    await getCachedExerciseSearch(userSearchKey)
 
   if (cachedExercises) {
-    return cachedExercises
+    /*
+     * Também atualiza resultados antigos que estavam no
+     * IndexedDB antes da criação da tradução.
+     */
+    const localizedCachedExercises =
+      cachedExercises.map(localizeExercise)
+
+    return localizedCachedExercises
   }
+
+  /*
+   * Apenas a consulta enviada à WorkoutX é traduzida
+   * para o inglês.
+   */
+  const workoutXQuery =
+    translateExerciseSearchQuery(userSearchKey)
 
   const exercises =
     await requestWorkoutXExercises(
-      normalizedQuery,
+      workoutXQuery,
       signal,
     )
 
   if (!signal?.aborted) {
     await saveExerciseSearch(
-      normalizedQuery,
+      userSearchKey,
       exercises,
     )
   }
