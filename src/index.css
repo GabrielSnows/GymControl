@@ -7,6 +7,7 @@
 @import './styles/components.css';
 @import './styles/authentication.css';
 @import './styles/exercise.css';
+@import './styles/exercise-details.css';
 @import './styles/workout.css';
 @import './styles/design-system.css';
 @import './styles/workout-session.css';

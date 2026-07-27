@@ -1,0 +1,164 @@
+/* =========================================================
+   WorkoutX exercise metadata
+   ========================================================= */
+
+.exercise-details-metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-top: 26px;
+}
+
+.exercise-details-metadata__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-width: 0;
+  padding: 14px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: 18px;
+
+  background: var(--gc-surface);
+}
+
+.exercise-details-metadata__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 13px;
+
+  color: var(--gc-brand);
+  background: var(--gc-brand-soft);
+}
+
+.exercise-details-metadata__item > div:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercise-details-metadata__item span {
+  color: var(--gc-text-tertiary);
+
+  font-size: 0.66rem;
+  font-weight: 680;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.exercise-details-metadata__item strong {
+  overflow: hidden;
+
+  color: var(--gc-text-primary);
+
+  font-size: 0.78rem;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   WorkoutX recommendation
+   ========================================================= */
+
+.exercise-details-recommendation {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+
+  margin-top: 20px;
+  padding: 18px;
+
+  border: 1px solid rgba(229, 57, 53, 0.16);
+  border-radius: 21px;
+
+  background: var(--gc-brand-soft);
+}
+
+.exercise-details-recommendation__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+
+  width: 43px;
+  height: 43px;
+
+  border-radius: 15px;
+
+  color: #ffffff;
+  background: var(--gc-brand);
+}
+
+.exercise-details-recommendation > div:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.exercise-details-recommendation span {
+  color: var(--gc-brand);
+
+  font-size: 0.68rem;
+  font-weight: 740;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.exercise-details-recommendation strong {
+  margin-top: 5px;
+
+  color: var(--gc-text-primary);
+
+  font-size: 1.08rem;
+  letter-spacing: -0.025em;
+}
+
+.exercise-details-recommendation p {
+  margin: 7px 0 0;
+
+  color: var(--gc-text-secondary);
+
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   Secondary muscles
+   ========================================================= */
+
+.exercise-secondary-muscles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exercise-secondary-muscles span {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 34px;
+  padding: 0 12px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-pill);
+
+  color: var(--gc-text-secondary);
+  background: var(--gc-surface-secondary);
+
+  font-size: 0.72rem;
+  font-weight: 620;
+}
+
+@media (max-width: 370px) {
+  .exercise-details-metadata {
+    grid-template-columns: 1fr;
+  }
+}
