@@ -1,6 +1,10 @@
 import { openDB, type DBSchema } from 'idb'
 
-import type { WorkoutExercise } from '../../types/exercise'
+import type {
+  Exercise,
+  WorkoutExercise,
+} from '../../types/exercise'
+import type { ExerciseHistory } from '../../types/exerciseHistory'
 import type { WorkoutDefinition } from '../../types/workout'
 import type { WorkoutProgress } from '../../types/workoutSession'
 
@@ -25,14 +29,20 @@ interface GymControlDatabase extends DBSchema {
       id: string
     }
   }
+
+  exerciseHistory: {
+    key: string
+    value: ExerciseHistory
+  }
 }
 
 const DATABASE_NAME = 'gymcontrol'
-const DATABASE_VERSION = 4
+const DATABASE_VERSION = 5
 
 const WORKOUT_STORE_NAME = 'workouts'
 const WORKOUT_DEFINITIONS_STORE_NAME = 'workoutDefinitions'
 const WORKOUT_PROGRESS_STORE_NAME = 'workoutProgress'
+const EXERCISE_HISTORY_STORE_NAME = 'exerciseHistory'
 
 const WORKOUT_PROGRESS_ID = 'current-progress'
 const WORKOUT_CODES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -42,21 +52,24 @@ const defaultWorkoutDefinitions: WorkoutDefinition[] = [
     id: 'workout-a',
     code: 'A',
     name: 'Peito, ombros e tríceps',
-    description: 'Treino de membros superiores com foco em empurrar.',
+    description:
+      'Treino de membros superiores com foco em empurrar.',
     order: 1,
   },
   {
     id: 'workout-b',
     code: 'B',
     name: 'Pernas',
-    description: 'Treino completo para os membros inferiores.',
+    description:
+      'Treino completo para os membros inferiores.',
     order: 2,
   },
   {
     id: 'workout-c',
     code: 'C',
     name: 'Costas e bíceps',
-    description: 'Treino de membros superiores com foco em puxar.',
+    description:
+      'Treino de membros superiores com foco em puxar.',
     order: 3,
   },
 ]
@@ -66,7 +79,11 @@ const databasePromise = openDB<GymControlDatabase>(
   DATABASE_VERSION,
   {
     upgrade(database) {
-      if (!database.objectStoreNames.contains(WORKOUT_STORE_NAME)) {
+      if (
+        !database.objectStoreNames.contains(
+          WORKOUT_STORE_NAME,
+        )
+      ) {
         database.createObjectStore(WORKOUT_STORE_NAME, {
           keyPath: 'workoutId',
         })
@@ -97,6 +114,19 @@ const databasePromise = openDB<GymControlDatabase>(
           },
         )
       }
+
+      if (
+        !database.objectStoreNames.contains(
+          EXERCISE_HISTORY_STORE_NAME,
+        )
+      ) {
+        database.createObjectStore(
+          EXERCISE_HISTORY_STORE_NAME,
+          {
+            keyPath: 'id',
+          },
+        )
+      }
     },
   },
 )
@@ -118,14 +148,33 @@ function getCodeForIndex(index: number) {
   const code = WORKOUT_CODES[index]
 
   if (!code) {
-    throw new Error('O limite máximo de 26 treinos foi atingido.')
+    throw new Error(
+      'O limite máximo de 26 treinos foi atingido.',
+    )
   }
 
   return code
 }
 
+export function getExerciseHistoryId(
+  exercise: Exercise,
+) {
+  const legacyExercise = exercise as Exercise & {
+    sourceId?: string
+  }
+
+  const sourceId = legacyExercise.sourceId?.trim()
+
+  if (sourceId) {
+    return `workoutx-${sourceId}`
+  }
+
+  return exercise.id
+}
+
 async function ensureDefaultWorkoutDefinitions() {
   const database = await databasePromise
+
   const storedDefinitions = await database.getAll(
     WORKOUT_DEFINITIONS_STORE_NAME,
   )
@@ -162,7 +211,10 @@ async function normalizeWorkoutDefinitions() {
     'readwrite',
   )
 
-  for (const [index, definition] of sortedDefinitions.entries()) {
+  for (const [
+    index,
+    definition,
+  ] of sortedDefinitions.entries()) {
     await transaction.store.put({
       ...definition,
       code: getCodeForIndex(index),
@@ -209,7 +261,9 @@ export async function createWorkoutDefinition(
   const definitions = await getWorkoutDefinitions()
 
   if (definitions.length >= WORKOUT_CODES.length) {
-    throw new Error('O limite máximo de 26 treinos foi atingido.')
+    throw new Error(
+      'O limite máximo de 26 treinos foi atingido.',
+    )
   }
 
   const newWorkout: WorkoutDefinition = {
@@ -280,14 +334,18 @@ export async function deleteWorkout(
     progress.nextWorkoutId === workoutId ||
     progress.lastCompletedWorkoutId === workoutId
   ) {
-    const remainingWorkouts = await getWorkoutDefinitions()
+    const remainingWorkouts =
+      await getWorkoutDefinitions()
 
     await saveWorkoutProgress({
-      nextWorkoutId: remainingWorkouts[0]?.id ?? null,
+      nextWorkoutId:
+        remainingWorkouts[0]?.id ?? null,
+
       lastCompletedWorkoutId:
         progress.lastCompletedWorkoutId === workoutId
           ? null
           : progress.lastCompletedWorkoutId,
+
       lastCompletedAt:
         progress.lastCompletedWorkoutId === workoutId
           ? null
@@ -327,7 +385,87 @@ export async function clearStoredWorkout(
 ): Promise<void> {
   const database = await databasePromise
 
-  await database.delete(WORKOUT_STORE_NAME, workoutId)
+  await database.delete(
+    WORKOUT_STORE_NAME,
+    workoutId,
+  )
+}
+
+export async function getExerciseHistories(
+  exercises: WorkoutExercise[],
+): Promise<Record<string, ExerciseHistory>> {
+  if (exercises.length === 0) {
+    return {}
+  }
+
+  const database = await databasePromise
+
+  const transaction = database.transaction(
+    EXERCISE_HISTORY_STORE_NAME,
+    'readonly',
+  )
+
+  const uniqueHistoryIds = [
+    ...new Set(
+      exercises.map((workoutExercise) =>
+        getExerciseHistoryId(
+          workoutExercise.exercise,
+        ),
+      ),
+    ),
+  ]
+
+  const storedHistories = await Promise.all(
+    uniqueHistoryIds.map((historyId) =>
+      transaction.store.get(historyId),
+    ),
+  )
+
+  await transaction.done
+
+  return storedHistories.reduce<
+    Record<string, ExerciseHistory>
+  >((historyMap, history) => {
+    if (history) {
+      historyMap[history.id] = history
+    }
+
+    return historyMap
+  }, {})
+}
+
+export async function saveExerciseHistories(
+  exercises: WorkoutExercise[],
+  completedAt = new Date().toISOString(),
+): Promise<void> {
+  if (exercises.length === 0) {
+    return
+  }
+
+  const database = await databasePromise
+
+  const transaction = database.transaction(
+    EXERCISE_HISTORY_STORE_NAME,
+    'readwrite',
+  )
+
+  for (const workoutExercise of exercises) {
+    const historyId = getExerciseHistoryId(
+      workoutExercise.exercise,
+    )
+
+    const history: ExerciseHistory = {
+      id: historyId,
+      exerciseName: workoutExercise.exercise.name,
+      lastWeight: workoutExercise.weight.trim(),
+      lastSeries: workoutExercise.series.trim(),
+      lastCompletedAt: completedAt,
+    }
+
+    await transaction.store.put(history)
+  }
+
+  await transaction.done
 }
 
 export async function getWorkoutProgress(): Promise<WorkoutProgress> {
@@ -343,7 +481,8 @@ export async function getWorkoutProgress(): Promise<WorkoutProgress> {
       nextWorkoutId: storedProgress.nextWorkoutId,
       lastCompletedWorkoutId:
         storedProgress.lastCompletedWorkoutId,
-      lastCompletedAt: storedProgress.lastCompletedAt,
+      lastCompletedAt:
+        storedProgress.lastCompletedAt,
     }
   }
 
@@ -373,6 +512,7 @@ export async function saveWorkoutProgress(
 
 export async function completeWorkout(
   completedWorkoutId: string,
+  completedAt = new Date().toISOString(),
 ): Promise<WorkoutProgress> {
   const workouts = await getWorkoutDefinitions()
 
@@ -382,13 +522,16 @@ export async function completeWorkout(
 
   const nextWorkout =
     currentWorkoutIndex >= 0
-      ? workouts[(currentWorkoutIndex + 1) % workouts.length]
+      ? workouts[
+          (currentWorkoutIndex + 1) %
+            workouts.length
+        ]
       : workouts[0]
 
   const progress: WorkoutProgress = {
     nextWorkoutId: nextWorkout?.id ?? null,
     lastCompletedWorkoutId: completedWorkoutId,
-    lastCompletedAt: new Date().toISOString(),
+    lastCompletedAt: completedAt,
   }
 
   await saveWorkoutProgress(progress)

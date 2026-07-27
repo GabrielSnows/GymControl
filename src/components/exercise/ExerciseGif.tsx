@@ -21,21 +21,21 @@ export function ExerciseGif({
   const [gifSource, setGifSource] =
     useState<string | null>(null)
 
-  const [isLoading, setIsLoading] = useState(
-    Boolean(exercise.gifUrl),
-  )
+  const [isLoading, setIsLoading] =
+    useState(Boolean(exercise.gifUrl))
 
-  const [hasFailed, setHasFailed] = useState(false)
+  const [hasFailed, setHasFailed] =
+    useState(false)
 
   useEffect(() => {
     let isMounted = true
-    let generatedObjectUrl: string | null = null
 
     async function loadGif() {
       if (!exercise.gifUrl) {
         setGifSource(null)
         setIsLoading(false)
         setHasFailed(false)
+
         return
       }
 
@@ -48,10 +48,6 @@ export function ExerciseGif({
         )
 
       if (!isMounted) {
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl)
-        }
-
         return
       }
 
@@ -59,10 +55,10 @@ export function ExerciseGif({
         setGifSource(null)
         setHasFailed(true)
         setIsLoading(false)
+
         return
       }
 
-      generatedObjectUrl = objectUrl
       setGifSource(objectUrl)
       setIsLoading(false)
     }
@@ -72,16 +68,22 @@ export function ExerciseGif({
     return () => {
       isMounted = false
 
-      if (generatedObjectUrl) {
-        URL.revokeObjectURL(generatedObjectUrl)
-      }
+      /*
+       * Não revogamos o Object URL aqui.
+       * O serviço mantém o arquivo reutilizável durante
+       * toda a sessão do aplicativo.
+       */
     }
   }, [exercise.gifUrl])
 
   const containerClasses = [
     'exercise-gif',
-    isLoading ? 'exercise-gif--loading' : '',
-    hasFailed ? 'exercise-gif--failed' : '',
+    isLoading
+      ? 'exercise-gif--loading'
+      : '',
+    hasFailed
+      ? 'exercise-gif--failed'
+      : '',
     className,
   ]
     .filter(Boolean)
@@ -104,6 +106,7 @@ export function ExerciseGif({
           aria-label={`Carregando execução de ${exercise.name}`}
         >
           <span aria-hidden="true" />
+
           <p>Carregando exercício</p>
         </div>
       ) : (

@@ -1,0 +1,169 @@
+/* =========================================================
+   Last exercise performance
+   ========================================================= */
+
+.workout-session-history {
+  margin-top: 18px;
+  padding: 15px;
+
+  border: 1px solid var(--gc-border);
+  border-radius: 18px;
+
+  background: var(--gc-surface-secondary);
+}
+
+.workout-session-history__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding-bottom: 12px;
+
+  border-bottom: 1px solid var(--gc-border);
+}
+
+.workout-session-history__header > span,
+.workout-session-history__header time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workout-session-history__header > span {
+  color: var(--gc-text-primary);
+
+  font-size: 0.73rem;
+  font-weight: 720;
+}
+
+.workout-session-history__header > span svg {
+  color: var(--gc-brand);
+}
+
+.workout-session-history__header time {
+  color: var(--gc-text-tertiary);
+
+  font-size: 0.68rem;
+  font-weight: 620;
+}
+
+.workout-session-history__values {
+  display: grid;
+  grid-template-columns: repeat(
+    2,
+    minmax(0, 1fr)
+  );
+  gap: 10px;
+
+  padding-top: 13px;
+}
+
+.workout-session-history__values > div {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 7px;
+  row-gap: 3px;
+
+  min-width: 0;
+}
+
+.workout-session-history__values svg {
+  grid-row: 1 / 3;
+
+  color: var(--gc-brand);
+}
+
+.workout-session-history__values span {
+  color: var(--gc-text-tertiary);
+
+  font-size: 0.65rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.workout-session-history__values strong {
+  overflow: hidden;
+
+  color: var(--gc-text-primary);
+
+  font-size: 0.79rem;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   Current workout values
+   ========================================================= */
+
+.workout-session-card__today {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+.workout-session-card__today::after {
+  flex: 1;
+
+  height: 1px;
+
+  background: var(--gc-border);
+
+  content: '';
+}
+
+.workout-session-card__today span {
+  color: var(--gc-brand);
+
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.workout-session-card__details {
+  margin-top: 12px;
+}
+
+.workout-session-card__details > label {
+  min-width: 0;
+}
+
+.workout-session-card__details > label > input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+
+  border: 1px solid transparent;
+  border-radius: 16px;
+  outline: none;
+
+  color: var(--gc-text-primary);
+  background: var(--gc-surface-secondary);
+
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.workout-session-card__details
+  > label
+  > input:focus {
+  border-color: var(--gc-brand);
+  box-shadow: 0 0 0 4px var(--gc-brand-soft);
+}
+
+@media (max-width: 360px) {
+  .workout-session-history__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .workout-session-card__details {
+    grid-template-columns: 1fr;
+  }
+}
