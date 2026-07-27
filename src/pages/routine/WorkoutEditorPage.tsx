@@ -12,13 +12,13 @@ import {
   useParams,
 } from 'react-router-dom'
 
-import { cacheExerciseGif } from '../../services/storage/exerciseMediaCache'
 import { ExerciseDetailsSheet } from '../../components/exercise/ExerciseDetailsSheet'
 import { ExerciseSearchSheet } from '../../components/exercise/ExerciseSearchSheet'
 import { Screen } from '../../components/layout/Screen'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { WorkoutFormSheet } from '../../components/workout/WorkoutFormSheet'
+import { cacheExerciseGif } from '../../services/storage/exerciseMediaCache'
 import {
   deleteWorkout,
   getStoredWorkoutExercises,
@@ -45,6 +45,25 @@ function generateWorkoutExerciseId() {
   return `workout-exercise-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 10)}`
+}
+
+function getInitialSeries(exercise: Exercise) {
+  const recommendedSets = exercise.recommendedSets?.trim()
+  const recommendedReps = exercise.recommendedReps?.trim()
+
+  if (recommendedSets && recommendedReps) {
+    return `${recommendedSets}x ${recommendedReps}`
+  }
+
+  if (recommendedSets) {
+    return `${recommendedSets}x 8-12`
+  }
+
+  if (recommendedReps) {
+    return `3x ${recommendedReps}`
+  }
+
+  return '3x 8-12'
 }
 
 export function WorkoutEditorPage() {
@@ -192,7 +211,7 @@ export function WorkoutEditorPage() {
       const newWorkoutExercise: WorkoutExercise = {
         id: generateWorkoutExerciseId(),
         exercise,
-        series: '3x 8-12',
+        series: getInitialSeries(exercise),
         weight: '',
       }
 
@@ -421,7 +440,7 @@ export function WorkoutEditorPage() {
 
                     <div className="workout-builder-exercise__fields">
                       <label>
-                        <span>Séries</span>
+                        <span>Séries e repetições</span>
 
                         <input
                           type="text"

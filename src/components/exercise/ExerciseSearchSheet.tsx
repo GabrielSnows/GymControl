@@ -8,6 +8,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type FormEvent,
 } from 'react'
 
 import { searchWorkoutXExercises } from '../../services/api/workoutXService'
@@ -19,23 +20,23 @@ type ExerciseSearchSheetProps = {
 }
 
 const MINIMUM_SEARCH_LENGTH = 2
-const SEARCH_DELAY = 500
 
 export function ExerciseSearchSheet({
   onClose,
   onSelect,
 }: ExerciseSearchSheetProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const activeRequestRef = useRef<AbortController | null>(null)
 
   const [search, setSearch] = useState('')
+  const [submittedSearch, setSubmittedSearch] = useState('')
   const [results, setResults] = useState<Exercise[]>([])
 
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const previousOverflow =
-      document.body.style.overflow
+    const previousOverflow = document.body.style.overflow
 
     document.body.style.overflow = 'hidden'
 
@@ -46,77 +47,83 @@ export function ExerciseSearchSheet({
     return () => {
       document.body.style.overflow = previousOverflow
       window.clearTimeout(focusTimer)
+      activeRequestRef.current?.abort()
     }
   }, [])
 
-  useEffect(() => {
+  async function handleSearch(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
+
     const normalizedSearch = search.trim()
 
-    if (
-      normalizedSearch.length <
-      MINIMUM_SEARCH_LENGTH
-    ) {
+    if (normalizedSearch.length < MINIMUM_SEARCH_LENGTH) {
+      setSubmittedSearch('')
       setResults([])
-      setError('')
-      setIsSearching(false)
+      setError(
+        `Digite pelo menos ${MINIMUM_SEARCH_LENGTH} caracteres.`,
+      )
 
+      inputRef.current?.focus()
       return
     }
 
+    activeRequestRef.current?.abort()
+
     const abortController = new AbortController()
+    activeRequestRef.current = abortController
 
-    const searchTimer = window.setTimeout(async () => {
-      try {
-        setIsSearching(true)
-        setError('')
+    try {
+      setSubmittedSearch(normalizedSearch)
+      setIsSearching(true)
+      setError('')
+      setResults([])
 
-        const exercises =
-          await searchWorkoutXExercises(
-            normalizedSearch,
-            abortController.signal,
-          )
+      const exercises = await searchWorkoutXExercises(
+        normalizedSearch,
+        abortController.signal,
+      )
 
-        if (!abortController.signal.aborted) {
-          setResults(exercises)
-        }
-      } catch (searchError) {
-        if (abortController.signal.aborted) {
-          return
-        }
-
-        console.error(
-          'Não foi possível pesquisar exercícios.',
-          searchError,
-        )
-
-        setResults([])
-
-        setError(
-          searchError instanceof Error
-            ? searchError.message
-            : 'Não foi possível pesquisar exercícios.',
-        )
-      } finally {
-        if (!abortController.signal.aborted) {
-          setIsSearching(false)
-        }
+      if (!abortController.signal.aborted) {
+        setResults(exercises)
       }
-    }, SEARCH_DELAY)
+    } catch (searchError) {
+      if (abortController.signal.aborted) {
+        return
+      }
 
-    return () => {
-      abortController.abort()
-      window.clearTimeout(searchTimer)
+      console.error(
+        'Não foi possível pesquisar exercícios.',
+        searchError,
+      )
+
+      setResults([])
+
+      setError(
+        searchError instanceof Error
+          ? searchError.message
+          : 'Não foi possível pesquisar exercícios.',
+      )
+    } finally {
+      if (!abortController.signal.aborted) {
+        setIsSearching(false)
+      }
     }
-  }, [search])
-
-  function clearSearch() {
-    setSearch('')
-    setResults([])
-    setError('')
-    inputRef.current?.focus()
   }
 
-  const normalizedSearch = search.trim()
+  function clearSearch() {
+    activeRequestRef.current?.abort()
+    activeRequestRef.current = null
+
+    setSearch('')
+    setSubmittedSearch('')
+    setResults([])
+    setError('')
+    setIsSearching(false)
+
+    inputRef.current?.focus()
+  }
 
   return (
     <div
@@ -150,7 +157,10 @@ export function ExerciseSearchSheet({
           </button>
         </header>
 
-        <div className="exercise-search">
+        <form
+          className="exercise-search"
+          onSubmit={handleSearch}
+        >
           <Search
             className="exercise-search__icon"
             size={20}
@@ -161,14 +171,20 @@ export function ExerciseSearchSheet({
           <input
             ref={inputRef}
             className="exercise-search__input"
-            type="search"
+            type="text"
+            inputMode="search"
             value={search}
-            placeholder="Ex.: bench press"
+            placeholder="Ex.: squat ou bench press"
             autoComplete="off"
             enterKeyHint="search"
-            onChange={(event) =>
+            aria-label="Pesquisar exercício"
+            onChange={(event) => {
               setSearch(event.target.value)
-            }
+
+              if (error) {
+                setError('')
+              }
+            }}
           />
 
           {search && (
@@ -181,37 +197,30 @@ export function ExerciseSearchSheet({
               <X size={17} strokeWidth={2.2} />
             </button>
           )}
-        </div>
+        </form>
 
         <div className="exercise-search__content">
-          {!normalizedSearch && (
-            <div className="exercise-search__empty">
-              <div
-                className="exercise-search__empty-icon"
-                aria-hidden="true"
-              >
-                <Search size={26} strokeWidth={1.8} />
+          {!submittedSearch &&
+            !isSearching &&
+            !error && (
+              <div className="exercise-search__empty">
+                <div
+                  className="exercise-search__empty-icon"
+                  aria-hidden="true"
+                >
+                  <Search size={26} strokeWidth={1.8} />
+                </div>
+
+                <h2>
+                  Qual exercício deseja adicionar?
+                </h2>
+
+                <p>
+                  Digite o nome em inglês e pressione Enter para
+                  pesquisar.
+                </p>
               </div>
-
-              <h2>Qual exercício deseja adicionar?</h2>
-
-              <p>
-                Pesquise pelo nome em inglês. A tradução será
-                adicionada em uma etapa posterior.
-              </p>
-            </div>
-          )}
-
-          {normalizedSearch.length === 1 && (
-            <div className="exercise-search__empty">
-              <h2>Continue digitando</h2>
-
-              <p>
-                Digite pelo menos dois caracteres para iniciar a
-                pesquisa.
-              </p>
-            </div>
-          )}
+            )}
 
           {isSearching && (
             <div
@@ -241,8 +250,7 @@ export function ExerciseSearchSheet({
 
           {!isSearching &&
             !error &&
-            normalizedSearch.length >=
-              MINIMUM_SEARCH_LENGTH &&
+            submittedSearch &&
             results.length === 0 && (
               <div className="exercise-search__empty">
                 <h2>Nenhum exercício encontrado</h2>
@@ -261,7 +269,8 @@ export function ExerciseSearchSheet({
                   {results.length}{' '}
                   {results.length === 1
                     ? 'resultado'
-                    : 'resultados'}
+                    : 'resultados'}{' '}
+                  para “{submittedSearch}”
                 </p>
 
                 <div className="exercise-results__list">

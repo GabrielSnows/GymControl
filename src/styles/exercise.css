@@ -745,3 +745,55 @@
   animation: workout-loading-shimmer 1300ms
     ease-in-out infinite;
 }
+
+/* =========================================================
+   WorkoutX search behavior
+   ========================================================= */
+
+.exercise-search-sheet {
+  display: flex;
+  flex-direction: column;
+
+  height: 100dvh;
+  min-height: 0;
+
+  overflow: hidden;
+}
+
+.exercise-search {
+  flex: 0 0 auto;
+}
+
+.exercise-search__input {
+  padding-right: 50px;
+}
+
+.exercise-search__clear {
+  right: 12px;
+}
+
+.exercise-search__content {
+  flex: 1;
+  min-height: 0;
+
+  padding-bottom: max(
+    32px,
+    env(safe-area-inset-bottom)
+  );
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.exercise-results {
+  padding-bottom: 24px;
+}
+
+@media (min-width: 600px) {
+  .exercise-search-sheet {
+    height: calc(100dvh - 48px);
+    min-height: 0;
+  }
+}
