@@ -1,3 +1,8 @@
+import {
+  getCachedExerciseSearch,
+  normalizeExerciseSearchQuery,
+  saveExerciseSearch,
+} from '../storage/exerciseSearchStorage'
 import type { Exercise } from '../../types/exercise'
 import type {
   WorkoutXErrorResponse,
@@ -56,7 +61,9 @@ function mapWorkoutXExercise(
     originalName: workoutXExercise.name,
 
     muscle: normalizeValue(workoutXExercise.target),
-    bodyPart: normalizeValue(workoutXExercise.bodyPart),
+    bodyPart: normalizeValue(
+      workoutXExercise.bodyPart,
+    ),
     equipment: normalizeValue(
       workoutXExercise.equipment,
     ),
@@ -64,8 +71,12 @@ function mapWorkoutXExercise(
     secondaryMuscles:
       workoutXExercise.secondaryMuscles ?? [],
 
-    description: createDescription(workoutXExercise),
-    instructions: workoutXExercise.instructions ?? [],
+    description: createDescription(
+      workoutXExercise,
+    ),
+
+    instructions:
+      workoutXExercise.instructions ?? [],
 
     gifUrl: `/api/exercise-gif?id=${encodeURIComponent(
       sourceId,
@@ -77,30 +88,31 @@ function mapWorkoutXExercise(
     force: workoutXExercise.force,
 
     met: workoutXExercise.met,
+
     caloriesPerMinute:
       workoutXExercise.caloriesPerMinute,
 
-    isUnilateral: workoutXExercise.isUnilateral,
-    popularityRank: workoutXExercise.popularityRank,
+    isUnilateral:
+      workoutXExercise.isUnilateral,
 
-    recommendedSets: workoutXExercise.recommendedSets,
-    recommendedReps: workoutXExercise.recommendedReps,
+    popularityRank:
+      workoutXExercise.popularityRank,
+
+    recommendedSets:
+      workoutXExercise.recommendedSets,
+
+    recommendedReps:
+      workoutXExercise.recommendedReps,
   }
 }
 
-export async function searchWorkoutXExercises(
+async function requestWorkoutXExercises(
   query: string,
   signal?: AbortSignal,
 ): Promise<Exercise[]> {
-  const normalizedQuery = query.trim()
-
-  if (normalizedQuery.length < 2) {
-    return []
-  }
-
   const response = await fetch(
     `/api/exercises?query=${encodeURIComponent(
-      normalizedQuery,
+      query,
     )}`,
     {
       method: 'GET',
@@ -134,4 +146,38 @@ export async function searchWorkoutXExercises(
   return responseBody.exercises.map(
     mapWorkoutXExercise,
   )
+}
+
+export async function searchWorkoutXExercises(
+  query: string,
+  signal?: AbortSignal,
+): Promise<Exercise[]> {
+  const normalizedQuery =
+    normalizeExerciseSearchQuery(query)
+
+  if (normalizedQuery.length < 2) {
+    return []
+  }
+
+  const cachedExercises =
+    await getCachedExerciseSearch(normalizedQuery)
+
+  if (cachedExercises) {
+    return cachedExercises
+  }
+
+  const exercises =
+    await requestWorkoutXExercises(
+      normalizedQuery,
+      signal,
+    )
+
+  if (!signal?.aborted) {
+    await saveExerciseSearch(
+      normalizedQuery,
+      exercises,
+    )
+  }
+
+  return exercises
 }
