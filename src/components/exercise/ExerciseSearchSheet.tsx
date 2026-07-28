@@ -32,8 +32,11 @@ export function ExerciseSearchSheet({
     useRef<AbortController | null>(null)
 
   const [search, setSearch] = useState('')
-  const [submittedSearch, setSubmittedSearch] =
-    useState('')
+
+  const [
+    submittedSearch,
+    setSubmittedSearch,
+  ] = useState('')
 
   const [results, setResults] = useState<
     Exercise[]
@@ -173,10 +176,7 @@ export function ExerciseSearchSheet({
             aria-label="Fechar pesquisa"
             onClick={onClose}
           >
-            <X
-              size={21}
-              strokeWidth={2.1}
-            />
+            <X size={21} strokeWidth={2.1} />
           </button>
         </header>
 
@@ -197,7 +197,7 @@ export function ExerciseSearchSheet({
             type="text"
             inputMode="search"
             value={search}
-            placeholder="Ex.: supino, agachamento ou remada"
+            placeholder="Ex.: supino peito com halteres"
             autoComplete="off"
             enterKeyHint="search"
             aria-label="Pesquisar exercício"
@@ -217,10 +217,7 @@ export function ExerciseSearchSheet({
               aria-label="Limpar pesquisa"
               onClick={clearSearch}
             >
-              <X
-                size={17}
-                strokeWidth={2.2}
-              />
+              <X size={17} strokeWidth={2.2} />
             </button>
           )}
         </form>
@@ -245,8 +242,8 @@ export function ExerciseSearchSheet({
                 </h2>
 
                 <p>
-                  Pesquise em português ou inglês e pressione
-                  Enter.
+                  Combine movimento, músculo e equipamento. Por
+                  exemplo: “supino peito com halteres”.
                 </p>
               </div>
             )}
@@ -290,8 +287,8 @@ export function ExerciseSearchSheet({
                 </h2>
 
                 <p>
-                  Tente pesquisar por um nome mais geral ou
-                  utilizar o nome em inglês.
+                  Tente remover um dos filtros ou pesquisar por
+                  um nome mais geral.
                 </p>
               </div>
             )}
@@ -309,34 +306,50 @@ export function ExerciseSearchSheet({
                 </p>
 
                 <div className="exercise-results__list">
-                  {results.map((exercise) => (
-                    <button
-                      key={exercise.id}
-                      type="button"
-                      className="exercise-result"
-                      onClick={() =>
-                        onSelect(exercise)
-                      }
-                    >
-                      <span className="exercise-result__content">
-                        <strong>
-                          {exercise.displayName}
-                        </strong>
+                  {results.map((exercise) => {
+                    const showOriginalName =
+                      exercise.translationConfidence !==
+                        'exact' &&
+                      exercise.displayName
+                        .toLocaleLowerCase('pt-BR') !==
+                        exercise.originalName
+                          .toLocaleLowerCase('en-US')
 
-                        <span>
-                          {exercise.muscle} ·{' '}
-                          {exercise.equipment}
+                    return (
+                      <button
+                        key={exercise.id}
+                        type="button"
+                        className="exercise-result"
+                        onClick={() =>
+                          onSelect(exercise)
+                        }
+                      >
+                        <span className="exercise-result__content">
+                          <strong>
+                            {exercise.displayName}
+                          </strong>
+
+                          {showOriginalName && (
+                            <small className="exercise-result__original-name">
+                              {exercise.originalName}
+                            </small>
+                          )}
+
+                          <span>
+                            {exercise.muscle} ·{' '}
+                            {exercise.equipment}
+                          </span>
                         </span>
-                      </span>
 
-                      <ChevronRight
-                        className="exercise-result__arrow"
-                        size={20}
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  ))}
+                        <ChevronRight
+                          className="exercise-result__arrow"
+                          size={20}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}

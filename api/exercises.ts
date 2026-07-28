@@ -9,6 +9,12 @@ const WORKOUTX_API_URL =
 const MINIMUM_SEARCH_LENGTH = 2
 const RESULT_LIMIT = 10
 
+type SearchMode =
+  | 'name'
+  | 'target'
+  | 'bodyPart'
+  | 'equipment'
+
 type WorkoutXExercise = {
   id: string
   name: string
@@ -50,6 +56,59 @@ function getQueryParameter(
   return rawValue?.trim() ?? ''
 }
 
+function isSearchMode(value: string): value is SearchMode {
+  return [
+    'name',
+    'target',
+    'bodyPart',
+    'equipment',
+  ].includes(value)
+}
+
+function createWorkoutXEndpoint(
+  mode: SearchMode,
+  query: string,
+) {
+  const encodedQuery = encodeURIComponent(query)
+
+  const endpointByMode: Record<SearchMode, string> = {
+    name:
+      `${WORKOUTX_API_URL}/exercises/name/` +
+      encodedQuery,
+
+    target:
+      `${WORKOUTX_API_URL}/exercises/target/` +
+      encodedQuery,
+
+    bodyPart:
+      `${WORKOUTX_API_URL}/exercises/bodyPart/` +
+      encodedQuery,
+
+    equipment:
+      `${WORKOUTX_API_URL}/exercises/equipment/` +
+      encodedQuery,
+  }
+
+  return (
+    `${endpointByMode[mode]}` +
+    `?limit=${RESULT_LIMIT}&offset=0`
+  )
+}
+
+function parseWorkoutXResponse(
+  parsedBody:
+    | WorkoutXExercise[]
+    | WorkoutXListResponse,
+) {
+  if (Array.isArray(parsedBody)) {
+    return parsedBody
+  }
+
+  return Array.isArray(parsedBody.data)
+    ? parsedBody.data
+    : []
+}
+
 export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
@@ -72,6 +131,7 @@ export default async function handler(
   }
 
   const query = getQueryParameter(request, 'query')
+  const rawMode = getQueryParameter(request, 'mode')
 
   if (query.length < MINIMUM_SEARCH_LENGTH) {
     return response.status(400).json({
@@ -80,10 +140,16 @@ export default async function handler(
     })
   }
 
-  const endpoint =
-    `${WORKOUTX_API_URL}/exercises/name/` +
-    `${encodeURIComponent(query)}` +
-    `?limit=${RESULT_LIMIT}&offset=0`
+  if (!isSearchMode(rawMode)) {
+    return response.status(400).json({
+      message: 'Tipo de pesquisa inválido.',
+    })
+  }
+
+  const endpoint = createWorkoutXEndpoint(
+    rawMode,
+    query,
+  )
 
   try {
     const workoutXResponse = await fetch(endpoint, {
@@ -109,6 +175,13 @@ export default async function handler(
         })
       }
 
+      if (workoutXResponse.status === 403) {
+        return response.status(403).json({
+          message:
+            'Esta pesquisa não está disponível no plano atual.',
+        })
+      }
+
       if (workoutXResponse.status === 429) {
         return response.status(429).json({
           message:
@@ -122,17 +195,24 @@ export default async function handler(
       })
     }
 
-    const parsedBody = JSON.parse(
-      rawBody,
-    ) as WorkoutXListResponse
+    const parsedBody = JSON.parse(rawBody) as
+      | WorkoutXExercise[]
+      | WorkoutXListResponse
 
-    const exercises = Array.isArray(parsedBody.data)
-      ? parsedBody.data
-      : []
+    const exercises =
+      parseWorkoutXResponse(parsedBody)
 
     return response.status(200).json({
-      total: parsedBody.total ?? exercises.length,
-      count: parsedBody.count ?? exercises.length,
+      total:
+        Array.isArray(parsedBody)
+          ? exercises.length
+          : parsedBody.total ?? exercises.length,
+
+      count:
+        Array.isArray(parsedBody)
+          ? exercises.length
+          : parsedBody.count ?? exercises.length,
+
       exercises,
     })
   } catch (error) {

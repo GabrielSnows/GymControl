@@ -41,7 +41,9 @@ export function normalizeExerciseSearchQuery(
 ) {
   return query
     .trim()
-    .toLocaleLowerCase('en-US')
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ')
 }
 
@@ -80,7 +82,14 @@ export async function getCachedExerciseSearch(
       return null
     }
 
-    if (isSearchCacheExpired(storedSearch.cachedAt)) {
+    const isInvalidCache =
+      !Array.isArray(storedSearch.exercises) ||
+      storedSearch.exercises.length === 0
+
+    if (
+      isInvalidCache ||
+      isSearchCacheExpired(storedSearch.cachedAt)
+    ) {
       await database.delete(
         STORE_NAME,
         normalizedQuery,
@@ -107,7 +116,10 @@ export async function saveExerciseSearch(
   const normalizedQuery =
     normalizeExerciseSearchQuery(query)
 
-  if (!normalizedQuery) {
+  if (
+    !normalizedQuery ||
+    exercises.length === 0
+  ) {
     return
   }
 
