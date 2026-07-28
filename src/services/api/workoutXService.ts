@@ -1,13 +1,15 @@
-import {
-  exerciseSemanticSearchTerms,
-  type ExerciseSearchCategory,
-} from '../../data/exerciseTranslations'
 import type { Exercise } from '../../types/exercise'
 import type {
   WorkoutXErrorResponse,
   WorkoutXExercise,
   WorkoutXSearchResponse,
 } from '../../types/workoutX'
+import {
+  createExerciseSearchPlan,
+  type ExerciseSearchPlan,
+  type ExerciseSearchRequest,
+  type SearchFilter,
+} from '../exercise/exerciseSearchParser'
 import {
   localizeExercise,
   normalizeExerciseText,
@@ -17,25 +19,6 @@ import {
   normalizeExerciseSearchQuery,
   saveExerciseSearch,
 } from '../storage/exerciseSearchStorage'
-
-type SearchMode =
-  | 'name'
-  | 'target'
-  | 'bodyPart'
-  | 'equipment'
-
-type SearchFilter = {
-  category: ExerciseSearchCategory
-  apiValue: string
-  matchedText: string
-}
-
-type ExerciseSearchPlan = {
-  mode: SearchMode
-  apiQuery: string
-  filters: SearchFilter[]
-  requestedName: string | null
-}
 
 function normalizeValue(
   value: string | undefined,
@@ -80,6 +63,18 @@ function mapWorkoutXExercise(
   const sourceId = workoutXExercise.id
   const originalName = workoutXExercise.name.trim()
 
+  const originalTarget =
+    workoutXExercise.target?.trim() ?? ''
+
+  const originalBodyPart =
+    workoutXExercise.bodyPart?.trim() ?? ''
+
+  const originalEquipment =
+    workoutXExercise.equipment?.trim() ?? ''
+
+  const originalSecondaryMuscles =
+    workoutXExercise.secondaryMuscles ?? []
+
   const exercise: Exercise = {
     id: `workoutx-${sourceId}`,
     source: 'workoutx',
@@ -92,20 +87,17 @@ function mapWorkoutXExercise(
     translationConfidence: 'fallback',
     unresolvedNameTerms: [],
 
-    muscle: normalizeValue(
-      workoutXExercise.target,
-    ),
-
-    bodyPart: normalizeValue(
-      workoutXExercise.bodyPart,
-    ),
-
-    equipment: normalizeValue(
-      workoutXExercise.equipment,
-    ),
-
+    muscle: originalTarget || 'Não informado',
+    bodyPart: originalBodyPart || 'Não informado',
+    equipment:
+      originalEquipment || 'Não informado',
     secondaryMuscles:
-      workoutXExercise.secondaryMuscles ?? [],
+      originalSecondaryMuscles,
+
+    originalTarget,
+    originalBodyPart,
+    originalEquipment,
+    originalSecondaryMuscles,
 
     description: createDescription(
       workoutXExercise,
@@ -124,6 +116,7 @@ function mapWorkoutXExercise(
     force: workoutXExercise.force,
 
     met: workoutXExercise.met,
+
     caloriesPerMinute:
       workoutXExercise.caloriesPerMinute,
 
@@ -143,252 +136,107 @@ function mapWorkoutXExercise(
   return localizeExercise(exercise)
 }
 
-function findSemanticMatches(query: string) {
-  const normalizedQuery = normalizeExerciseText(query)
-
-  const matches: SearchFilter[] = []
-
-  for (const term of exerciseSemanticSearchTerms) {
-    const orderedPortugueseTerms = [
-      ...term.portuguese,
-    ].sort(
-      (first, second) =>
-        second.length - first.length,
-    )
-
-    const matchedTerm =
-      orderedPortugueseTerms.find((portugueseTerm) =>
-        normalizedQuery.includes(
-          normalizeExerciseText(portugueseTerm),
-        ),
-      )
-
-    if (!matchedTerm) {
-      continue
-    }
-
-    const alreadyAdded = matches.some(
-      (match) =>
-        match.category === term.category &&
-        match.apiValue === term.apiValue,
-    )
-
-    if (!alreadyAdded) {
-      matches.push({
-        category: term.category,
-        apiValue: term.apiValue,
-        matchedText: matchedTerm,
-      })
-    }
-  }
-
-  return matches
+function normalizeCanonicalValue(value: string) {
+  return normalizeExerciseText(value)
 }
 
-function chooseMostSpecificMatch(
-  matches: SearchFilter[],
-  category: ExerciseSearchCategory,
+function nameContainsPhrase(
+  exercise: Exercise,
+  phrase: string,
 ) {
-  return matches
-    .filter((match) => match.category === category)
-    .sort(
-      (first, second) =>
-        second.matchedText.length -
-        first.matchedText.length,
-    )[0]
+  return normalizeCanonicalValue(
+    exercise.originalName,
+  ).includes(normalizeCanonicalValue(phrase))
 }
 
-function createSearchPlan(
-  userQuery: string,
-): ExerciseSearchPlan {
-  const matches = findSemanticMatches(userQuery)
+function matchesCanonicalExercise(
+  exercise: Exercise,
+  plan: ExerciseSearchPlan,
+) {
+  const canonical = plan.canonicalExercise
 
-  const movement = chooseMostSpecificMatch(
-    matches,
-    'movement',
-  )
-
-  const target = chooseMostSpecificMatch(
-    matches,
-    'target',
-  )
-
-  const bodyPart = chooseMostSpecificMatch(
-    matches,
-    'bodyPart',
-  )
-
-  const equipment = chooseMostSpecificMatch(
-    matches,
-    'equipment',
-  )
-
-  if (movement) {
-    return {
-      mode: 'name',
-      apiQuery: movement.apiValue,
-      filters: matches.filter(
-        (match) => match !== movement,
-      ),
-      requestedName: movement.apiValue,
-    }
+  if (!canonical) {
+    return true
   }
 
-  if (target) {
-    return {
-      mode: 'target',
-      apiQuery: target.apiValue,
-      filters: matches.filter(
-        (match) => match !== target,
-      ),
-      requestedName: null,
-    }
+  const matchesRequiredGroups =
+    canonical.requiredNameTermGroups.every(
+      (group) =>
+        group.some((phrase) =>
+          nameContainsPhrase(exercise, phrase),
+        ),
+    )
+
+  if (!matchesRequiredGroups) {
+    return false
   }
 
-  if (bodyPart) {
-    return {
-      mode: 'bodyPart',
-      apiQuery: bodyPart.apiValue,
-      filters: matches.filter(
-        (match) => match !== bodyPart,
-      ),
-      requestedName: null,
-    }
+  if (
+    canonical.target &&
+    normalizeCanonicalValue(
+      exercise.originalTarget,
+    ) !== normalizeCanonicalValue(canonical.target)
+  ) {
+    return false
   }
 
-  if (equipment) {
-    return {
-      mode: 'equipment',
-      apiQuery: equipment.apiValue,
-      filters: matches.filter(
-        (match) => match !== equipment,
-      ),
-      requestedName: null,
-    }
+  if (
+    canonical.bodyPart &&
+    normalizeCanonicalValue(
+      exercise.originalBodyPart,
+    ) !==
+      normalizeCanonicalValue(canonical.bodyPart)
+  ) {
+    return false
   }
 
-  return {
-    mode: 'name',
-    apiQuery: userQuery.trim(),
-    filters: [],
-    requestedName: userQuery.trim(),
+  if (
+    canonical.equipment &&
+    normalizeCanonicalValue(
+      exercise.originalEquipment,
+    ) !==
+      normalizeCanonicalValue(canonical.equipment)
+  ) {
+    return false
   }
+
+  return true
 }
 
 function matchesTarget(
   exercise: Exercise,
   expectedValue: string,
 ) {
-  const expected = normalizeExerciseText(expectedValue)
+  const expected =
+    normalizeCanonicalValue(expectedValue)
 
-  const values = [
-    exercise.muscle,
-    exercise.bodyPart,
-    ...exercise.secondaryMuscles,
-  ].map(normalizeExerciseText)
-
-  const originalValues = [
-    exercise.originalName,
-    exercise.muscle,
-    exercise.bodyPart,
-    exercise.equipment,
-  ].map(normalizeExerciseText)
-
-  const aliasesByTarget: Record<string, string[]> = {
-    pectorals: ['pectorals', 'peitoral', 'chest'],
-    delts: ['delts', 'deltoides', 'shoulders'],
-    biceps: ['biceps', 'bíceps'],
-    triceps: ['triceps', 'tríceps'],
-    quads: ['quads', 'quadríceps'],
-    hamstrings: [
-      'hamstrings',
-      'posteriores de coxa',
-    ],
-    lats: ['lats', 'dorsais', 'back'],
-    glutes: ['glutes', 'glúteos'],
-    calves: ['calves', 'panturrilhas'],
-  }
-
-  const acceptedValues =
-    aliasesByTarget[expected] ?? [expected]
-
-  return acceptedValues.some((acceptedValue) => {
-    const normalizedAccepted =
-      normalizeExerciseText(acceptedValue)
-
-    return [...values, ...originalValues].some(
-      (value) => value.includes(normalizedAccepted),
-    )
-  })
+  return [
+    exercise.originalTarget,
+    ...exercise.originalSecondaryMuscles,
+  ]
+    .map(normalizeCanonicalValue)
+    .some((value) => value === expected)
 }
 
 function matchesBodyPart(
   exercise: Exercise,
   expectedValue: string,
 ) {
-  const expected = normalizeExerciseText(expectedValue)
-
-  const aliases: Record<string, string[]> = {
-    shoulders: ['shoulders', 'ombros', 'deltoides'],
-    back: ['back', 'costas', 'dorsais'],
-    chest: ['chest', 'peitoral', 'pectorals'],
-    'upper arms': ['upper arms', 'braços'],
-    'upper legs': ['upper legs', 'pernas'],
-    waist: ['waist', 'abdômen'],
-  }
-
-  const acceptedValues = aliases[expected] ?? [expected]
-
-  const exerciseValues = [
-    exercise.bodyPart,
-    exercise.muscle,
-    ...exercise.secondaryMuscles,
-  ].map(normalizeExerciseText)
-
-  return acceptedValues.some((acceptedValue) => {
-    const normalizedAccepted =
-      normalizeExerciseText(acceptedValue)
-
-    return exerciseValues.some((value) =>
-      value.includes(normalizedAccepted),
-    )
-  })
+  return (
+    normalizeCanonicalValue(
+      exercise.originalBodyPart,
+    ) === normalizeCanonicalValue(expectedValue)
+  )
 }
 
 function matchesEquipment(
   exercise: Exercise,
   expectedValue: string,
 ) {
-  const equipment =
-    normalizeExerciseText(exercise.equipment)
-
-  const originalEquipment =
-    normalizeExerciseText(
-      exercise.originalName,
-    )
-
-  const expected =
-    normalizeExerciseText(expectedValue)
-
-  const aliases: Record<string, string[]> = {
-    dumbbell: ['dumbbell', 'halter', 'halteres'],
-    barbell: ['barbell', 'barra'],
-    cable: ['cable', 'cabo', 'polia'],
-    'smith machine': ['smith'],
-    'leverage machine': ['machine', 'máquina'],
-    'body weight': ['body weight', 'peso corporal'],
-  }
-
-  return (aliases[expected] ?? [expected]).some(
-    (acceptedValue) => {
-      const normalizedAccepted =
-        normalizeExerciseText(acceptedValue)
-
-      return (
-        equipment.includes(normalizedAccepted) ||
-        originalEquipment.includes(normalizedAccepted)
-      )
-    },
+  return (
+    normalizeCanonicalValue(
+      exercise.originalEquipment,
+    ) === normalizeCanonicalValue(expectedValue)
   )
 }
 
@@ -396,11 +244,22 @@ function matchesVariation(
   exercise: Exercise,
   expectedValue: string,
 ) {
-  const originalName =
-    normalizeExerciseText(exercise.originalName)
+  return nameContainsPhrase(
+    exercise,
+    expectedValue,
+  )
+}
 
-  return originalName.includes(
-    normalizeExerciseText(expectedValue),
+function matchesMovementGroup(
+  exercise: Exercise,
+  plan: ExerciseSearchPlan,
+) {
+  if (!plan.movementGroup) {
+    return true
+  }
+
+  return plan.movementGroup.some((phrase) =>
+    nameContainsPhrase(exercise, phrase),
   )
 }
 
@@ -431,10 +290,9 @@ function matchesFilter(
       )
 
     case 'movement':
-      return normalizeExerciseText(
-        exercise.originalName,
-      ).includes(
-        normalizeExerciseText(filter.apiValue),
+      return nameContainsPhrase(
+        exercise,
+        filter.apiValue,
       )
 
     default:
@@ -444,17 +302,21 @@ function matchesFilter(
 
 function filterExercises(
   exercises: Exercise[],
-  filters: SearchFilter[],
+  plan: ExerciseSearchPlan,
 ) {
-  if (filters.length === 0) {
-    return exercises
-  }
+  return exercises.filter((exercise) => {
+    if (!matchesCanonicalExercise(exercise, plan)) {
+      return false
+    }
 
-  return exercises.filter((exercise) =>
-    filters.every((filter) =>
+    if (!matchesMovementGroup(exercise, plan)) {
+      return false
+    }
+
+    return plan.filters.every((filter) =>
       matchesFilter(exercise, filter),
-    ),
-  )
+    )
+  })
 }
 
 function calculateExerciseScore(
@@ -463,31 +325,36 @@ function calculateExerciseScore(
 ) {
   let score = 0
 
-  const originalName =
-    normalizeExerciseText(exercise.originalName)
+  if (plan.canonicalExercise) {
+    const canonical =
+      plan.canonicalExercise
 
-  const displayName =
-    normalizeExerciseText(exercise.displayName)
+    for (
+      let index = 0;
+      index <
+      canonical.requiredNameTermGroups.length;
+      index += 1
+    ) {
+      const group =
+        canonical.requiredNameTermGroups[index]
 
-  const requestedName = plan.requestedName
-    ? normalizeExerciseText(plan.requestedName)
-    : ''
-
-  if (requestedName) {
-    if (originalName === requestedName) {
-      score += 1000
-    } else if (displayName === requestedName) {
-      score += 950
-    } else if (originalName.startsWith(requestedName)) {
-      score += 700
-    } else if (originalName.includes(requestedName)) {
-      score += 500
+      if (
+        group.some((phrase) =>
+          nameContainsPhrase(exercise, phrase),
+        )
+      ) {
+        score += 1_000
+      }
     }
+  }
+
+  if (matchesMovementGroup(exercise, plan)) {
+    score += 500
   }
 
   for (const filter of plan.filters) {
     if (matchesFilter(exercise, filter)) {
-      score += 100
+      score += 200
     }
   }
 
@@ -506,7 +373,7 @@ function sortExercises(
 ) {
   return [...exercises].sort(
     (firstExercise, secondExercise) => {
-      const scoreDifference =
+      const difference =
         calculateExerciseScore(
           secondExercise,
           plan,
@@ -516,8 +383,8 @@ function sortExercises(
           plan,
         )
 
-      if (scoreDifference !== 0) {
-        return scoreDifference
+      if (difference !== 0) {
+        return difference
       }
 
       return firstExercise.displayName.localeCompare(
@@ -549,12 +416,12 @@ function removeDuplicateExercises(
 }
 
 async function requestWorkoutXExercises(
-  plan: ExerciseSearchPlan,
+  request: ExerciseSearchRequest,
   signal?: AbortSignal,
 ): Promise<Exercise[]> {
   const queryParameters = new URLSearchParams({
-    query: plan.apiQuery,
-    mode: plan.mode,
+    query: request.apiQuery,
+    mode: request.mode,
   })
 
   const response = await fetch(
@@ -593,6 +460,48 @@ async function requestWorkoutXExercises(
   )
 }
 
+async function executeSearchPlan(
+  plan: ExerciseSearchPlan,
+  signal?: AbortSignal,
+) {
+  const collectedExercises: Exercise[] = []
+
+  for (const request of plan.requests) {
+    if (signal?.aborted) {
+      break
+    }
+
+    const exercises =
+      await requestWorkoutXExercises(
+        request,
+        signal,
+      )
+
+    collectedExercises.push(...exercises)
+
+    const filteredSoFar = filterExercises(
+      removeDuplicateExercises(
+        collectedExercises,
+      ),
+      plan,
+    )
+
+    if (
+      plan.canonicalExercise &&
+      filteredSoFar.length > 0
+    ) {
+      return filteredSoFar
+    }
+  }
+
+  return filterExercises(
+    removeDuplicateExercises(
+      collectedExercises,
+    ),
+    plan,
+  )
+}
+
 export async function searchWorkoutXExercises(
   query: string,
   signal?: AbortSignal,
@@ -614,21 +523,16 @@ export async function searchWorkoutXExercises(
     return cachedExercises.map(localizeExercise)
   }
 
-  const searchPlan = createSearchPlan(query)
+  const searchPlan =
+    createExerciseSearchPlan(query)
 
-  const requestedExercises =
-    await requestWorkoutXExercises(
-      searchPlan,
-      signal,
-    )
-
-  const filteredExercises = filterExercises(
-    requestedExercises,
-    searchPlan.filters,
+  const exercises = await executeSearchPlan(
+    searchPlan,
+    signal,
   )
 
   const finalExercises = sortExercises(
-    removeDuplicateExercises(filteredExercises),
+    removeDuplicateExercises(exercises),
     searchPlan,
   )
 
@@ -641,6 +545,6 @@ export async function searchWorkoutXExercises(
       finalExercises,
     )
   }
-  
+
   return finalExercises
 }

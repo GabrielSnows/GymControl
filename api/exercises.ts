@@ -202,6 +202,28 @@ export default async function handler(
     const exercises =
       parseWorkoutXResponse(parsedBody)
 
+
+      console.log('==============================')
+      console.log('WORKOUTX SEARCH')
+      console.log({
+        mode: rawMode,
+        query,
+        endpoint,
+        count: exercises.length,
+      })
+
+      console.table(
+        exercises.map((exercise) => ({
+          id: exercise.id,
+          name: exercise.name,
+          target: exercise.target,
+          bodyPart: exercise.bodyPart,
+          equipment: exercise.equipment,
+        })),
+      )
+
+      console.log('==============================')
+
     return response.status(200).json({
       total:
         Array.isArray(parsedBody)

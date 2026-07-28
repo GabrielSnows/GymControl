@@ -24,6 +24,11 @@ export type Exercise = {
   equipment: string
   secondaryMuscles: string[]
 
+  originalTarget?: string
+  originalBodyPart?: string
+  originalEquipment?: string
+  originalSecondaryMuscles?: string[]
+
   description: string
   instructions: string[]
 
