@@ -26,3 +26,9 @@ dist-ssr
 # Environment variables
 .env*
 .vercel
+.env.local
+.env.*.local
+
+# Checkpoint local da importação WorkoutX
+scripts/.workoutx-import-checkpoint.json
+scripts/.exercise-enrich-checkpoint.json
