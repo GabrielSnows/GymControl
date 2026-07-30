@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dev-dist
 *.local
 
 # Editor directories and files
@@ -17,6 +18,7 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
@@ -32,3 +34,11 @@ dist-ssr
 # Checkpoint local da importação WorkoutX
 scripts/.workoutx-import-checkpoint.json
 scripts/.exercise-enrich-checkpoint.json
+
+# Temporary catalog artifacts
+catalog/*.backup.json
+catalog/*-report.json
+
+# Script checkpoints
+scripts/.*checkpoint*.json
+scripts/.catalog-pending-review.json

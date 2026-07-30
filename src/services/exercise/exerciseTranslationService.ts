@@ -8,8 +8,8 @@ import {
   forceTranslations,
   mechanicTranslations,
   muscleTranslations,
-} from '../../data/exerciseTranslations'
-import type { Exercise } from '../../types/exercise'
+} from '../../data/exerciseTranslations.js'
+import type { Exercise } from '../../types/exercise.js'
 
 type MovementRule = {
   phrases: string[]

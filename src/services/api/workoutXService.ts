@@ -174,7 +174,7 @@ function matchesCanonicalExercise(
   if (
     canonical.target &&
     normalizeCanonicalValue(
-      exercise.originalTarget,
+      exercise.originalTarget ?? '',
     ) !== normalizeCanonicalValue(canonical.target)
   ) {
     return false
@@ -183,7 +183,7 @@ function matchesCanonicalExercise(
   if (
     canonical.bodyPart &&
     normalizeCanonicalValue(
-      exercise.originalBodyPart,
+      exercise.originalBodyPart ?? '',
     ) !==
       normalizeCanonicalValue(canonical.bodyPart)
   ) {
@@ -193,7 +193,7 @@ function matchesCanonicalExercise(
   if (
     canonical.equipment &&
     normalizeCanonicalValue(
-      exercise.originalEquipment,
+      exercise.originalEquipment ?? '',
     ) !==
       normalizeCanonicalValue(canonical.equipment)
   ) {
@@ -210,11 +210,13 @@ function matchesTarget(
   const expected =
     normalizeCanonicalValue(expectedValue)
 
-  return [
-    exercise.originalTarget,
-    ...exercise.originalSecondaryMuscles,
+  const values = [
+    exercise.originalTarget ?? '',
+    ...(exercise.originalSecondaryMuscles ?? []),
   ]
-    .map(normalizeCanonicalValue)
+
+  return values
+    .map((value) => normalizeCanonicalValue(value))
     .some((value) => value === expected)
 }
 
@@ -224,7 +226,7 @@ function matchesBodyPart(
 ) {
   return (
     normalizeCanonicalValue(
-      exercise.originalBodyPart,
+      exercise.originalBodyPart ?? '',
     ) === normalizeCanonicalValue(expectedValue)
   )
 }
@@ -235,7 +237,7 @@ function matchesEquipment(
 ) {
   return (
     normalizeCanonicalValue(
-      exercise.originalEquipment,
+      exercise.originalEquipment ?? '',
     ) === normalizeCanonicalValue(expectedValue)
   )
 }
